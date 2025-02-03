@@ -45,13 +45,12 @@
     </div>
 
     <script>
-        // URLs der Seiten für den Infobildschirm
+        // URLs für den Infobildschirm
         const urls = [
-            "https://bowi-peine.eu/iserv/infodisplay/show/129",          // IServ Vertretungsplan
-            "https://bowi31.github.io/anschlussfoerderung/",            // Deine Anschlussförderung-Seite
-            "https://www.wetter.com/deutschland/peine/DE0010043.html",  // Wetter Peine
-            "https://www.tagesschau.de",                               // Nachrichten Tagesschau
-            "https://www.vmz-niedersachsen.de/niedersachsen/verkehrslage/" // Verkehr Niedersachsen
+            "https://www.tagesschau.de",                               // Nachrichten
+            "https://www.google.com/maps/@52.320969,10.235749,10z",   // Verkehr (Google Maps)
+            "https://bowi31.github.io/anschlussfoerderung/",          // Deine Anschlussförderung
+            "https://www.meteoblue.com/de/wetter/widget/three/peine"  // Wetter Peine (Alternativlink)
         ];
 
         let index = 0;
@@ -59,25 +58,29 @@
         const iframe = document.getElementById("infoScreen");
         const progressBar = document.getElementById("progress");
 
-        function switchURL() {
+        function switchURL(next = true) {
             // Fadet die aktuelle Seite aus
             iframe.style.opacity = "0";
 
-            // Nach 0,5 Sekunden die neue Seite laden
             setTimeout(() => {
+                // Lädt die nächste oder vorherige Seite
+                if (next) {
+                    index = (index + 1) % urls.length; // Weiter
+                } else {
+                    index = (index - 1 + urls.length) % urls.length; // Zurück
+                }
                 iframe.src = urls[index];
-                index = (index + 1) % urls.length; // Zur nächsten Seite wechseln
                 resetProgressBar();
-            }, 500);
+            }, 500); // Zeit für das Fade-Out
         }
 
         iframe.onload = () => {
-            // Nach dem Laden der Seite wird die Seite eingeblendet
+            // Fadet die Seite ein, sobald sie geladen ist
             iframe.style.opacity = "1";
         };
 
         function startSlideshow() {
-            setInterval(switchURL, interval); // Wechselt alle 30 Sekunden die Seite
+            setInterval(() => switchURL(true), interval); // Automatischer Wechsel
             animateProgressBar();
         }
 
@@ -97,10 +100,49 @@
             animateProgressBar();
         }
 
-        // Erste URL laden und Slideshow starten
-        iframe.src = urls[index];
-        index++;
-        startSlideshow();
+        // Vollbildmodus aktivieren
+        function enterFullScreen() {
+            const docElem = document.documentElement;
+            if (docElem.requestFullscreen) {
+                docElem.requestFullscreen();
+            } else if (docElem.mozRequestFullScreen) {
+                docElem.mozRequestFullScreen();
+            } else if (docElem.webkitRequestFullscreen) {
+                docElem.webkitRequestFullscreen();
+            } else if (docElem.msRequestFullscreen) {
+                docElem.msRequestFullscreen();
+            }
+        }
+
+        // Wenn Vollbildmodus verlassen wird, erneut aktivieren
+        document.addEventListener("fullscreenchange", () => {
+            if (!document.fullscreenElement) {
+                setTimeout(enterFullScreen, 1000);
+            }
+        });
+
+        // Touchscreen-Steuerung (Weiterwischen)
+        let startX = 0;
+        document.addEventListener("touchstart", (e) => {
+            startX = e.touches[0].clientX;
+        });
+
+        document.addEventListener("touchend", (e) => {
+            const endX = e.changedTouches[0].clientX;
+            if (endX - startX > 50) {
+                switchURL(false); // Wischen nach rechts (Zurück)
+            } else if (startX - endX > 50) {
+                switchURL(true); // Wischen nach links (Weiter)
+            }
+        });
+
+        // Seite bei Laden in den Vollbildmodus wechseln
+        window.onload = () => {
+            enterFullScreen();
+            iframe.src = urls[index];
+            index++;
+            startSlideshow();
+        };
     </script>
 
 </body>
