@@ -16,6 +16,7 @@
             width: 100vw;
             height: 100vh;
             border: none;
+            display: none;
         }
         .news-container {
             width: 100%;
@@ -23,6 +24,7 @@
             overflow-y: auto;
             padding: 20px;
             box-sizing: border-box;
+            display: none;
         }
         .news-item {
             margin-bottom: 20px;
@@ -37,17 +39,14 @@
             font-size: 1em;
             margin: 0;
         }
-        .hidden {
-            display: none;
-        }
     </style>
 </head>
 <body>
     <!-- IServ Infobildschirm -->
-    <iframe id="iservScreen" class="hidden"></iframe>
+    <iframe id="iservScreen"></iframe>
 
     <!-- Nachrichtenanzeige -->
-    <div id="newsContainer" class="hidden"></div>
+    <div id="newsContainer"></div>
 
     <script>
         const urls = [
@@ -59,28 +58,34 @@
         const iframe = document.getElementById("iservScreen");
         const newsContainer = document.getElementById("newsContainer");
 
-        function switchScreen() {
-            // Verstecke alle Inhalte
-            iframe.classList.add("hidden");
-            newsContainer.classList.add("hidden");
+        // Anzeige wechseln
+        function switchScreen(next = true) {
+            // Verstecke beide Inhalte
+            iframe.style.display = "none";
+            newsContainer.style.display = "none";
+
+            // Aktuelle URL-Typ ermitteln
+            if (!next) {
+                index = (index - 1 + urls.length) % urls.length; // Zurück
+            } else {
+                index = (index + 1) % urls.length; // Weiter
+            }
 
             const current = urls[index];
             if (current.type === "iserv") {
-                // IServ Infobildschirm im Vollbildmodus anzeigen
+                // IServ Infobildschirm anzeigen
                 iframe.src = current.url;
-                iframe.classList.remove("hidden");
+                iframe.style.display = "block";
             } else if (current.type === "news") {
                 // Nachrichten anzeigen
                 fetchNews(current.url);
-                newsContainer.classList.remove("hidden");
+                newsContainer.style.display = "block";
             }
-
-            index = (index + 1) % urls.length; // Zur nächsten URL wechseln
         }
 
+        // Nachrichten laden
         async function fetchNews(rssUrl) {
             try {
-                // Hole die RSS-Daten
                 const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`);
                 const data = await response.json();
                 const parser = new DOMParser();
@@ -90,8 +95,8 @@
                 // Nachrichtencontainer leeren
                 newsContainer.innerHTML = "";
 
-                items.forEach((item, index) => {
-                    if (index < 5) { // Zeige nur die ersten 5 Nachrichten
+                items.forEach((item, idx) => {
+                    if (idx < 5) { // Nur die ersten 5 Nachrichten anzeigen
                         const title = item.querySelector("title").textContent;
                         const description = item.querySelector("description").textContent;
 
@@ -110,6 +115,21 @@
             }
         }
 
+        // Touch-Steuerung
+        let startX = 0;
+        document.addEventListener("touchstart", (e) => {
+            startX = e.touches[0].clientX;
+        });
+
+        document.addEventListener("touchend", (e) => {
+            const endX = e.changedTouches[0].clientX;
+            if (endX - startX > 50) {
+                switchScreen(false); // Wischen nach rechts (Zurück)
+            } else if (startX - endX > 50) {
+                switchScreen(true); // Wischen nach links (Weiter)
+            }
+        });
+
         // Vollbildmodus aktivieren
         function enterFullScreen() {
             const docElem = document.documentElement;
@@ -124,11 +144,11 @@
             }
         }
 
-        // Beim Laden der Seite starten
+        // Seite starten
         window.onload = () => {
             enterFullScreen();
             switchScreen(); // Erste Anzeige starten
-            setInterval(switchScreen, interval); // Alle 30 Sekunden wechseln
+            setInterval(() => switchScreen(true), interval); // Automatischer Wechsel
         };
     </script>
 </body>
