@@ -47,40 +47,42 @@
     <script>
         // URLs für den Infobildschirm
         const urls = [
-            "https://www.tagesschau.de",                               // Nachrichten
-            "https://www.google.com/maps/@52.320969,10.235749,10z",   // Verkehr (Google Maps)
+            "https://bowi-peine.eu/iserv/infodisplay/show/129",        // IServ Infobildschirm
+            "https://www.meteoblue.com/de/wetter/widget/three/peine", // Wetter Peine
             "https://bowi31.github.io/anschlussfoerderung/",          // Deine Anschlussförderung
-            "https://www.meteoblue.com/de/wetter/widget/three/peine"  // Wetter Peine (Alternativlink)
+            "https://www.tagesschau.de"                              // Tagesschau Nachrichten
         ];
 
         let index = 0;
-        let interval = 30000; // Zeit pro Seite in Millisekunden (30 Sekunden)
+        let interval = 30000; // 30 Sekunden pro Seite
         const iframe = document.getElementById("infoScreen");
         const progressBar = document.getElementById("progress");
 
         function switchURL(next = true) {
-            // Fadet die aktuelle Seite aus
-            iframe.style.opacity = "0";
-
+            iframe.style.opacity = "0"; // Fadet die aktuelle Seite aus
             setTimeout(() => {
-                // Lädt die nächste oder vorherige Seite
                 if (next) {
-                    index = (index + 1) % urls.length; // Weiter
+                    index = (index + 1) % urls.length; // Nächste Seite
                 } else {
-                    index = (index - 1 + urls.length) % urls.length; // Zurück
+                    index = (index - 1 + urls.length) % urls.length; // Vorherige Seite
                 }
-                iframe.src = urls[index];
-                resetProgressBar();
+
+                // IServ und Tagesschau direkt im Vollbildmodus
+                if (urls[index].includes("iserv") || urls[index].includes("tagesschau")) {
+                    window.location.href = urls[index];
+                } else {
+                    iframe.src = urls[index];
+                    resetProgressBar();
+                }
             }, 500); // Zeit für das Fade-Out
         }
 
         iframe.onload = () => {
-            // Fadet die Seite ein, sobald sie geladen ist
-            iframe.style.opacity = "1";
+            iframe.style.opacity = "1"; // Nach dem Laden einblenden
         };
 
         function startSlideshow() {
-            setInterval(() => switchURL(true), interval); // Automatischer Wechsel
+            setInterval(() => switchURL(true), interval); // Automatischer Seitenwechsel
             animateProgressBar();
         }
 
