@@ -39,6 +39,23 @@
             font-size: 1em;
             margin: 0;
         }
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        button {
+            background: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -48,15 +65,23 @@
     <!-- Nachrichtenanzeige -->
     <div id="newsContainer"></div>
 
+    <!-- Pause/Play Button -->
+    <div class="controls">
+        <button id="pausePlayBtn">⏸ Pause</button>
+    </div>
+
     <script>
         const urls = [
             { type: "iserv", url: "https://bowi-peine.eu/iserv/infodisplay/show/129" }, // IServ Infobildschirm
             { type: "news", url: "https://www.tagesschau.de/xml/rss2" }                // Tagesschau RSS-Feed
         ];
         let index = 0;
-        const interval = 30000; // 30 Sekunden pro Seite
+        let interval = 30000; // 30 Sekunden pro Seite
+        let autoSlide = true; // Automatisches Wechseln aktiv
+        let timer;
         const iframe = document.getElementById("iservScreen");
         const newsContainer = document.getElementById("newsContainer");
+        const pausePlayBtn = document.getElementById("pausePlayBtn");
 
         // Anzeige wechseln
         function switchScreen(next = true) {
@@ -115,6 +140,31 @@
             }
         }
 
+        // Automatisches Durchlaufen starten
+        function startSlideshow() {
+            stopSlideshow(); // Vorherige Timer stoppen
+            if (autoSlide) {
+                timer = setInterval(() => switchScreen(true), interval);
+            }
+        }
+
+        // Automatisches Durchlaufen stoppen
+        function stopSlideshow() {
+            clearInterval(timer);
+        }
+
+        // Pause/Play Button
+        pausePlayBtn.addEventListener("click", () => {
+            autoSlide = !autoSlide;
+            if (autoSlide) {
+                pausePlayBtn.textContent = "⏸ Pause";
+                startSlideshow();
+            } else {
+                pausePlayBtn.textContent = "▶ Play";
+                stopSlideshow();
+            }
+        });
+
         // Touch-Steuerung
         let startX = 0;
         document.addEventListener("touchstart", (e) => {
@@ -148,7 +198,7 @@
         window.onload = () => {
             enterFullScreen();
             switchScreen(); // Erste Anzeige starten
-            setInterval(() => switchScreen(true), interval); // Automatischer Wechsel
+            startSlideshow(); // Automatisches Durchlaufen starten
         };
     </script>
 </body>
