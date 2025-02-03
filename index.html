@@ -17,201 +17,46 @@
             width: 100vw;
             height: 100vh;
             border: none;
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-        }
-        .controls {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px 20px;
-            border-radius: 10px;
-        }
-        button {
-            background: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 18px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        .progress-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.3);
-        }
-        .progress {
-            height: 100%;
-            width: 0%;
-            background: limegreen;
-            transition: width linear;
-        }
-        .nav-buttons {
-            position: absolute;
-            width: 100%;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
-        }
-        .nav-button {
-            background: rgba(255, 255, 255, 0.3);
-            border: none;
-            padding: 20px;
-            font-size: 24px;
-            cursor: pointer;
-            border-radius: 50%;
-            transition: background 0.3s;
-        }
-        .nav-button:hover {
-            background: rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
 <body>
-
-    <iframe id="infoScreen" src=""></iframe>
-
-    <div class="controls">
-        <button id="pausePlayBtn">⏸ Pause</button>
-    </div>
-
-    <div class="progress-bar">
-        <div class="progress" id="progress"></div>
-    </div>
-
-    <div class="nav-buttons">
-        <button class="nav-button" id="prevBtn">⬅</button>
-        <button class="nav-button" id="nextBtn">➡</button>
-    </div>
+    <iframe id="infoScreen" src="https://bowi-peine.eu/iserv/infodisplay/show/129"></iframe>
 
     <script>
-        const urls = [
-            "https://bowi-peine.eu/iserv/infodisplay/show/129",
-            "https://bowi31.github.io/anschlussfoerderung/",
-            "https://www.wetter.com/deutschland/peine/DE0010043.html",
-            "https://www.tagesschau.de",
-            "https://www.uestra.de/liniennetz/hannover/",
-            "https://www.vmz-niedersachsen.de/niedersachsen/verkehrslage/"
-        ];
+        function optimizeIServScreen() {
+            const iframe = document.getElementById("infoScreen").contentWindow.document;
 
-        let index = 0;
-        let interval = 15000; // 15 Sekunden
-        let autoSlide = true;
-        let timer, progressTimer;
-        const iframe = document.getElementById("infoScreen");
-        const pausePlayBtn = document.getElementById("pausePlayBtn");
-        const progressBar = document.getElementById("progress");
-        const prevBtn = document.getElementById("prevBtn");
-        const nextBtn = document.getElementById("nextBtn");
+            // Warte, bis die IServ-Seite vollständig geladen ist
+            iframe.addEventListener("DOMContentLoaded", () => {
+                try {
+                    // Verstecke alle unnötigen Elemente
+                    const elementsToHide = [
+                        "header",  // Kopfzeile
+                        "footer",  // Fußzeile
+                        "#nav",    // Navigationsmenü
+                        ".sidebar" // Seitenleiste
+                    ];
+                    elementsToHide.forEach(selector => {
+                        const element = iframe.querySelector(selector);
+                        if (element) element.style.display = "none";
+                    });
 
-        function switchURL(next = true) {
-            if (next) {
-                index = (index + 1) % urls.length;
-            } else {
-                index = (index - 1 + urls.length) % urls.length;
-            }
-            iframe.style.opacity = "0"; // Animation starten
-            setTimeout(() => {
-                iframe.src = urls[index];
-                resetProgressBar();
-            }, 500); // Kurze Verzögerung für den Effekt
+                    // Passe die Hauptinhaltsbreite an
+                    const mainContent = iframe.querySelector(".main-content");
+                    if (mainContent) {
+                        mainContent.style.margin = "0";
+                        mainContent.style.width = "100%";
+                        mainContent.style.height = "100%";
+                    }
+                } catch (error) {
+                    console.error("Fehler beim Optimieren des IServ-Bildschirms:", error);
+                }
+            });
         }
 
-        iframe.onload = () => {
-            iframe.style.opacity = "1"; // Nach dem Laden anzeigen
-        };
-
-        function startSlideshow() {
-            stopSlideshow();
-            if (autoSlide) {
-                timer = setInterval(() => switchURL(true), interval);
-                animateProgressBar();
-            }
-        }
-
-        function stopSlideshow() {
-            clearInterval(timer);
-            clearInterval(progressTimer);
-        }
-
-        function toggleSlideshow() {
-            autoSlide = !autoSlide;
-            if (autoSlide) {
-                pausePlayBtn.textContent = "⏸ Pause";
-                startSlideshow();
-            } else {
-                pausePlayBtn.textContent = "▶ Play";
-                stopSlideshow();
-            }
-        }
-
-        function animateProgressBar() {
-            let progress = 0;
-            progressBar.style.width = "0%";
-            progressTimer = setInterval(() => {
-                progress += 100 / (interval / 100);
-                progressBar.style.width = progress + "%";
-                if (progress >= 100) clearInterval(progressTimer);
-            }, 100);
-        }
-
-        function resetProgressBar() {
-            clearInterval(progressTimer);
-            animateProgressBar();
-        }
-
-        function enterFullScreen() {
-            const docElem = document.documentElement;
-            if (docElem.requestFullscreen) {
-                docElem.requestFullscreen();
-            } else if (docElem.mozRequestFullScreen) {
-                docElem.mozRequestFullScreen();
-            } else if (docElem.webkitRequestFullscreen) {
-                docElem.webkitRequestFullscreen();
-            } else if (docElem.msRequestFullscreen) {
-                docElem.msRequestFullscreen();
-            }
-        }
-
-        document.addEventListener("fullscreenchange", () => {
-            if (!document.fullscreenElement) {
-                setTimeout(enterFullScreen, 1000);
-            }
-        });
-
-        window.onload = () => {
-            setTimeout(enterFullScreen, 500);
-        };
-
-        // Swipe-Steuerung
-        let startX = 0;
-        document.addEventListener("touchstart", (e) => {
-            startX = e.touches[0].clientX;
-        });
-
-        document.addEventListener("touchend", (e) => {
-            let endX = e.changedTouches[0].clientX;
-            if (endX - startX > 50) {
-                switchURL(false);
-            } else if (startX - endX > 50) {
-                switchURL(true);
-            }
-        });
-
-        pausePlayBtn.addEventListener("click", toggleSlideshow);
-        prevBtn.addEventListener("click", () => switchURL(false));
-        nextBtn.addEventListener("click", () => switchURL(true));
-
-        switchURL();
-        startSlideshow();
+        // Ladeoptimierung nach dem Einbinden der IServ-Seite
+        document.getElementById("infoScreen").onload = optimizeIServScreen;
     </script>
-
 </body>
 </html>
