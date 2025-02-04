@@ -62,6 +62,24 @@
             border: none;
         }
 
+        /* Bahn-Abfahrtszeiten */
+        .bahn-container {
+            width: 100%;
+            height: 100%;
+            display: none;
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2em;
+        }
+        .bahn-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .bahn-table th, .bahn-table td {
+            border: 1px solid white;
+            padding: 10px;
+        }
+
         /* Fortschrittsbalken */
         .progress-bar {
             width: 100%;
@@ -106,6 +124,7 @@
 
     <div class="content">
         <iframe id="frame"></iframe>
+        <div id="bahnContainer" class="bahn-container"></div>
     </div>
 
     <div class="controls">
@@ -119,14 +138,18 @@
 
     <script>
         const urls = [
-            { url: "https://www.wikipedia.org", duration: 15000 }, // Test-URL
-            { url: "https://www.google.com", duration: 15000 }, // Test-URL
-            { url: "https://www.meteoblue.com/de/wetter/widget/three/peine", duration: 15000 } // Wetter
+            { type: "iserv", url: "https://bowi-peine.eu/iserv/public/infodisplay/show/129/c6af9a78ff8616fa33578ec862619bee", duration: 30000 }, // IServ Vertretungsplan
+            { type: "custom", url: "https://bowi31.github.io/anschlussfoerderung/", duration: 15000 }, // Anschlussförderung
+            { type: "weather", url: "https://www.meteoblue.com/de/wetter/widget/three/peine", duration: 15000 }, // Wetter
+            { type: "news", url: "https://www.peiner-nachrichten.de/rss", duration: 30000 }, // Nachrichten
+            { type: "traffic", url: "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d9707.6084343058!2d10.2264764!3d52.320969!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47b1ff8b4e0b6c99%3A0x7bde4d5b3b5c67c4!2sFriedrich-Ebert-Platz%2021%2C%2031210%20Peine!5e0!3m2!1sde!2sde!4v1645000324325!5m2!1sde!2sde", duration: 15000 }, // Verkehr
+            { type: "bahn", url: "https://api.irail.be/liveboard/?station=Peine&arrdep=departure&format=json", duration: 15000 } // Bahn-Abfahrten
         ];
 
         let index = 0; // Start mit der ersten URL
         let autoSlide = true; // Automatischer Wechsel ist aktiviert
         const frame = document.getElementById("frame");
+        const bahnContainer = document.getElementById("bahnContainer");
         const progressBar = document.getElementById("progress");
         const pausePlayBtn = document.getElementById("pausePlayBtn");
 
@@ -143,11 +166,41 @@
         setInterval(updateTime, 1000);
         updateTime(); // Initiale Anzeige
 
+        // Lade Bahn-Daten
+        async function fetchBahnData() {
+            try {
+                const response = await fetch(urls.find(u => u.type === "bahn").url);
+                const data = await response.json();
+                let output = `<h2>Abfahrten Peine</h2><table class="bahn-table">
+                    <tr><th>Zug</th><th>Nach</th><th>Gleis</th><th>Verspätung</th></tr>`;
+
+                data.departures.departure.forEach(train => {
+                    output += `<tr>
+                        <td>${train.vehicle.replace('IC', 'InterCity')}</td>
+                        <td>${train.direction.name}</td>
+                        <td>${train.platform}</td>
+                        <td>${train.delay || 0} min</td>
+                    </tr>`;
+                });
+
+                output += `</table>`;
+                bahnContainer.innerHTML = output;
+            } catch (error) {
+                bahnContainer.innerHTML = "<p>Bahn-Daten nicht verfügbar.</p>";
+            }
+        }
+
         // Lade den aktuellen Inhalt
         function loadContent() {
             const current = urls[index];
-            frame.src = current.url; // Lade die URL im iFrame
-            console.log(`Lade URL: ${current.url}`); // Debugging-Log
+            frame.style.display = current.type === "bahn" ? "none" : "block";
+            bahnContainer.style.display = current.type === "bahn" ? "block" : "none";
+
+            if (current.type === "bahn") {
+                fetchBahnData();
+            } else {
+                frame.src = current.url; // Lade die URL im iFrame
+            }
             startProgressBar(current.duration);
         }
 
@@ -161,7 +214,6 @@
         // Wechsel zwischen Inhalten
         function switchContent(next = true) {
             index = (index + (next ? 1 : -1) + urls.length) % urls.length;
-            console.log(`Wechsel zu URL ${index + 1}: ${urls[index].url}`); // Debugging-Log
             loadContent();
         }
 
