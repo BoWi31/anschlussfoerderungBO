@@ -55,6 +55,13 @@
             position: relative;
         }
 
+        /* Standard-Ansicht für iFrames */
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
         /* Fortschrittsbalken */
         .progress-bar {
             width: 100%;
@@ -98,7 +105,7 @@
     </div>
 
     <div class="content">
-        <iframe id="frame" class="default-iframe"></iframe>
+        <iframe id="frame"></iframe>
     </div>
 
     <div class="controls">
@@ -111,17 +118,68 @@
     </div>
 
     <script>
+        const urls = [
+            { url: "https://www.peiner-nachrichten.de/rss", duration: 30000 }, // Nachrichten
+            { url: "https://bowi-peine.eu/iserv/public/infodisplay/show/129/c6af9a78ff8616fa33578ec862619bee", duration: 30000 }, // IServ
+            { url: "https://bowi31.github.io/anschlussfoerderung/", duration: 15000 }, // Anschlussförderung
+            { url: "https://www.meteoblue.com/de/wetter/widget/three/peine", duration: 15000 } // Wetter
+        ];
+
+        let index = 0; // Start mit der ersten URL
+        let autoSlide = true; // Automatischer Wechsel ist aktiviert
+        const frame = document.getElementById("frame");
+        const progressBar = document.getElementById("progress");
+        const pausePlayBtn = document.getElementById("pausePlayBtn");
+
+        // Aktualisiere die Uhrzeit und das Datum
         function updateTime() {
             const now = new Date();
             const day = String(now.getDate()).padStart(2, '0');
-            const month = String(now.getMonth() + 1).padStart(2, '0'); // Monate beginnen bei 0
+            const month = String(now.getMonth() + 1).padStart(2, '0');
             const year = now.getFullYear();
             const time = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
             document.getElementById("time").textContent = `${day}.${month}.${year} ${time}`;
         }
         setInterval(updateTime, 1000);
-        updateTime(); // Sofort beim Laden setzen
+        updateTime(); // Initiale Anzeige
+
+        // Lade den aktuellen Inhalt
+        function loadContent() {
+            const current = urls[index];
+            frame.src = current.url; // Lade die URL im iFrame
+            console.log(`Lade URL: ${current.url}`); // Debugging-Log
+            startProgressBar(current.duration);
+        }
+
+        // Fortschrittsbalken starten
+        function startProgressBar(duration) {
+            progressBar.style.width = "100%";
+            progressBar.style.transition = `width ${duration / 1000}s linear`;
+            progressBar.style.width = "0%";
+        }
+
+        // Wechsel zwischen Inhalten
+        function switchContent(next = true) {
+            index = (index + (next ? 1 : -1) + urls.length) % urls.length;
+            loadContent();
+        }
+
+        // Event-Listener für die Steuerung
+        document.getElementById("prevBtn").addEventListener("click", () => switchContent(false));
+        document.getElementById("nextBtn").addEventListener("click", () => switchContent(true));
+        pausePlayBtn.addEventListener("click", () => {
+            autoSlide = !autoSlide;
+            pausePlayBtn.textContent = autoSlide ? "⏸ Pause" : "▶ Play";
+        });
+
+        // Automatischer Wechsel der Inhalte
+        setInterval(() => {
+            if (autoSlide) switchContent(true);
+        }, urls[index].duration);
+
+        // Initiale Anzeige
+        window.onload = loadContent;
     </script>
 </body>
 </html>
