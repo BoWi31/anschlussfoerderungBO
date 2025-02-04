@@ -119,9 +119,8 @@
 
     <script>
         const urls = [
-            { url: "https://www.peiner-nachrichten.de/rss", duration: 30000 }, // Nachrichten
-            { url: "https://bowi-peine.eu/iserv/public/infodisplay/show/129/c6af9a78ff8616fa33578ec862619bee", duration: 30000 }, // IServ
-            { url: "https://bowi31.github.io/anschlussfoerderung/", duration: 15000 }, // Anschlussförderung
+            { url: "https://www.wikipedia.org", duration: 15000 }, // Test-URL
+            { url: "https://www.google.com", duration: 15000 }, // Test-URL
             { url: "https://www.meteoblue.com/de/wetter/widget/three/peine", duration: 15000 } // Wetter
         ];
 
@@ -162,6 +161,7 @@
         // Wechsel zwischen Inhalten
         function switchContent(next = true) {
             index = (index + (next ? 1 : -1) + urls.length) % urls.length;
+            console.log(`Wechsel zu URL ${index + 1}: ${urls[index].url}`); // Debugging-Log
             loadContent();
         }
 
