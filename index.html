@@ -3,11 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Infobildschirm BoWi</title>
+    <title>Infobildschirm BoWi - Tagesschau</title>
     
-    <!-- Google Fonts für moderne Schriftart -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-
     <style>
         * {
             margin: 0;
@@ -15,7 +12,7 @@
             box-sizing: border-box;
         }
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: Arial, sans-serif;
             background-color: black;
             color: white;
             overflow: hidden;
@@ -35,49 +32,36 @@
             align-items: center;
             padding: 10px 20px;
             font-size: 1.5em;
-            font-weight: 600;
         }
         .header .title {
             font-weight: bold;
         }
         .header .time {
-            font-family: 'Inter', sans-serif;
+            font-family: monospace;
             font-size: 1.2em;
         }
 
-        /* Inhaltsbereich */
-        .content {
-            width: 100%;
-            height: calc(100vh - 100px);
+        /* Nachrichtenbereich */
+        .news-container {
+            flex: 1;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            position: relative;
-        }
-
-        /* Standard-Ansicht für iFrames */
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        /* Bahn-Abfahrtszeiten */
-        .bahn-container {
-            width: 100%;
-            height: 100%;
-            display: none;
-            text-align: center;
             padding: 20px;
+            text-align: center;
+        }
+        .news-container img {
+            max-width: 80%;
+            height: auto;
+            border-radius: 10px;
+        }
+        .news-container h2 {
+            margin: 20px 0 10px;
+            font-size: 1.8em;
+        }
+        .news-container p {
             font-size: 1.2em;
-        }
-        .bahn-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .bahn-table th, .bahn-table td {
-            border: 1px solid white;
-            padding: 10px;
         }
 
         /* Fortschrittsbalken */
@@ -94,26 +78,6 @@
             width: 0%;
             transition: width linear;
         }
-
-        /* Steuerung */
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .controls button {
-            padding: 10px 15px;
-            font-size: 1.2em;
-            background-color: #555;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
@@ -122,38 +86,21 @@
         <div class="time" id="time"></div>
     </div>
 
-    <div class="content">
-        <iframe id="frame"></iframe>
-        <div id="bahnContainer" class="bahn-container"></div>
+    <div class="news-container" id="newsContainer">
+        <!-- Nachrichteninhalt wird dynamisch eingefügt -->
     </div>
 
-    <div class="controls">
-        <button id="prevBtn">⬅</button>
-        <button id="pausePlayBtn">⏸ Pause</button>
-        <button id="nextBtn">➡</button>
-    </div>
     <div class="progress-bar">
         <div class="progress" id="progress"></div>
     </div>
 
     <script>
-        const urls = [
-            { type: "iserv", url: "https://bowi-peine.eu/iserv/public/infodisplay/show/129/c6af9a78ff8616fa33578ec862619bee", duration: 30000 }, // IServ Vertretungsplan
-            { type: "custom", url: "https://bowi31.github.io/anschlussfoerderung/", duration: 15000 }, // Anschlussförderung
-            { type: "weather", url: "https://www.meteoblue.com/de/wetter/widget/three/peine", duration: 15000 }, // Wetter
-            { type: "news", url: "https://www.peiner-nachrichten.de/rss", duration: 30000 }, // Nachrichten
-            { type: "traffic", url: "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d9707.6084343058!2d10.2264764!3d52.320969!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47b1ff8b4e0b6c99%3A0x7bde4d5b3b5c67c4!2sFriedrich-Ebert-Platz%2021%2C%2031210%20Peine!5e0!3m2!1sde!2sde!4v1645000324325!5m2!1sde!2sde", duration: 15000 }, // Verkehr
-            { type: "bahn", url: "https://api.irail.be/liveboard/?station=Peine&arrdep=departure&format=json", duration: 15000 } // Bahn-Abfahrten
-        ];
-
-        let index = 0; // Start mit der ersten URL
-        let autoSlide = true; // Automatischer Wechsel ist aktiviert
-        const frame = document.getElementById("frame");
-        const bahnContainer = document.getElementById("bahnContainer");
+        const newsContainer = document.getElementById("newsContainer");
         const progressBar = document.getElementById("progress");
-        const pausePlayBtn = document.getElementById("pausePlayBtn");
+        let articles = []; // Array für Artikel aus dem Feed
+        let currentIndex = 0;
 
-        // Aktualisiere die Uhrzeit und das Datum
+        // Aktualisiere die Uhrzeit
         function updateTime() {
             const now = new Date();
             const day = String(now.getDate()).padStart(2, '0');
@@ -166,42 +113,40 @@
         setInterval(updateTime, 1000);
         updateTime(); // Initiale Anzeige
 
-        // Lade Bahn-Daten
-        async function fetchBahnData() {
+        // Lade den RSS-Feed der Tagesschau
+        async function fetchRSS() {
             try {
-                const response = await fetch(urls.find(u => u.type === "bahn").url);
+                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent("https://www.tagesschau.de/xml/rss2")}`);
                 const data = await response.json();
-                let output = `<h2>Abfahrten Peine</h2><table class="bahn-table">
-                    <tr><th>Zug</th><th>Nach</th><th>Gleis</th><th>Verspätung</th></tr>`;
+                const parser = new DOMParser();
+                const xml = parser.parseFromString(data.contents, "text/xml");
+                const items = xml.querySelectorAll("item");
 
-                data.departures.departure.forEach(train => {
-                    output += `<tr>
-                        <td>${train.vehicle.replace('IC', 'InterCity')}</td>
-                        <td>${train.direction.name}</td>
-                        <td>${train.platform}</td>
-                        <td>${train.delay || 0} min</td>
-                    </tr>`;
-                });
+                articles = Array.from(items).map(item => ({
+                    title: item.querySelector("title").textContent,
+                    description: item.querySelector("description").textContent,
+                    image: item.querySelector("enclosure")?.getAttribute("url") || "https://via.placeholder.com/800x400?text=Kein+Bild",
+                }));
 
-                output += `</table>`;
-                bahnContainer.innerHTML = output;
+                showArticle(); // Zeige den ersten Artikel
             } catch (error) {
-                bahnContainer.innerHTML = "<p>Bahn-Daten nicht verfügbar.</p>";
+                newsContainer.innerHTML = "<p>Nachrichten konnten nicht geladen werden.</p>";
             }
         }
 
-        // Lade den aktuellen Inhalt
-        function loadContent() {
-            const current = urls[index];
-            frame.style.display = current.type === "bahn" ? "none" : "block";
-            bahnContainer.style.display = current.type === "bahn" ? "block" : "none";
+        // Zeige einen Artikel
+        function showArticle() {
+            if (articles.length === 0) return;
 
-            if (current.type === "bahn") {
-                fetchBahnData();
-            } else {
-                frame.src = current.url; // Lade die URL im iFrame
-            }
-            startProgressBar(current.duration);
+            const article = articles[currentIndex];
+            newsContainer.innerHTML = `
+                <img src="${article.image}" alt="Nachrichtenbild">
+                <h2>${article.title}</h2>
+                <p>${article.description}</p>
+            `;
+
+            startProgressBar(30000); // 30 Sekunden pro Artikel
+            currentIndex = (currentIndex + 1) % articles.length; // Nächster Artikel
         }
 
         // Fortschrittsbalken starten
@@ -209,29 +154,12 @@
             progressBar.style.width = "100%";
             progressBar.style.transition = `width ${duration / 1000}s linear`;
             progressBar.style.width = "0%";
+
+            setTimeout(showArticle, duration); // Nächster Artikel nach Ablauf
         }
 
-        // Wechsel zwischen Inhalten
-        function switchContent(next = true) {
-            index = (index + (next ? 1 : -1) + urls.length) % urls.length;
-            loadContent();
-        }
-
-        // Event-Listener für die Steuerung
-        document.getElementById("prevBtn").addEventListener("click", () => switchContent(false));
-        document.getElementById("nextBtn").addEventListener("click", () => switchContent(true));
-        pausePlayBtn.addEventListener("click", () => {
-            autoSlide = !autoSlide;
-            pausePlayBtn.textContent = autoSlide ? "⏸ Pause" : "▶ Play";
-        });
-
-        // Automatischer Wechsel der Inhalte
-        setInterval(() => {
-            if (autoSlide) switchContent(true);
-        }, urls[index].duration);
-
-        // Initiale Anzeige
-        window.onload = loadContent;
+        // Lade den RSS-Feed beim Start
+        fetchRSS();
     </script>
 </body>
 </html>
