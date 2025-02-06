@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Infobildschirm BoWi - Tagesschau</title>
+    <title>Infobildschirm BoWi</title>
     
     <style>
         * {
@@ -32,8 +32,6 @@
             align-items: center;
             padding: 10px 20px;
             font-size: 1.5em;
-        }
-        .header .title {
             font-weight: bold;
         }
         .header .time {
@@ -41,15 +39,29 @@
             font-size: 1.2em;
         }
 
-        /* Nachrichtenbereich */
+        /* Inhaltsbereich */
+        .content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Nachrichten */
         .news-container {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
             text-align: center;
+            padding: 20px;
         }
         .news-container img {
             max-width: 80%;
@@ -78,29 +90,68 @@
             width: 0%;
             transition: width linear;
         }
+
+        /* Steuerung */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px;
+        }
+        .controls button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background-color: #555;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="title">Infobildschirm BoWi</div>
+        <div>Infobildschirm BoWi</div>
         <div class="time" id="time"></div>
     </div>
 
-    <div class="news-container" id="newsContainer">
-        <!-- Nachrichteninhalt wird dynamisch eingefügt -->
+    <div class="content">
+        <iframe id="frame"></iframe>
+        <div id="newsContainer" class="news-container" style="display: none;">
+            <img src="" alt="Nachrichtenbild" id="newsImage">
+            <h2 id="newsTitle"></h2>
+            <p id="newsDescription"></p>
+        </div>
     </div>
 
+    <div class="controls">
+        <button id="prevBtn">⬅ Zurück</button>
+        <button id="pausePlayBtn">⏸ Pause</button>
+        <button id="nextBtn">➡ Weiter</button>
+    </div>
     <div class="progress-bar">
         <div class="progress" id="progress"></div>
     </div>
 
     <script>
-        const newsContainer = document.getElementById("newsContainer");
-        const progressBar = document.getElementById("progress");
-        let articles = []; // Array für Artikel aus dem Feed
-        let currentIndex = 0;
+        const urls = [
+            { type: "iserv", url: "https://bowi-peine.eu/iserv/public/infodisplay/show/129/c6af9a78ff8616fa33578ec862619bee", duration: 30000 },
+            { type: "custom", url: "https://bowi31.github.io/anschlussfoerderung/", duration: 15000 },
+            { type: "weather", url: "https://www.meteoblue.com/de/wetter/widget/three/peine", duration: 15000 },
+            { type: "traffic", url: "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d9707.6084343058!2d10.2264764!3d52.320969!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47b1ff8b4e0b6c99%3A0x7bde4d5b3b5c67c4!2sFriedrich-Ebert-Platz%2021%2C%2031210%20Peine!5e0!3m2!1sde!2sde!4v1645000324325!5m2!1sde!2sde", duration: 15000 },
+            { type: "bahn", url: "https://api.irail.be/liveboard/?station=Peine&arrdep=departure&format=json", duration: 15000 },
+            { type: "news", url: "https://www.tagesschau.de/xml/rss2", duration: 30000 }
+        ];
 
-        // Aktualisiere die Uhrzeit
+        let currentIndex = 0;
+        let autoSlide = true;
+        const frame = document.getElementById("frame");
+        const newsContainer = document.getElementById("newsContainer");
+        const newsImage = document.getElementById("newsImage");
+        const newsTitle = document.getElementById("newsTitle");
+        const newsDescription = document.getElementById("newsDescription");
+        const progressBar = document.getElementById("progress");
+
         function updateTime() {
             const now = new Date();
             const day = String(now.getDate()).padStart(2, '0');
@@ -111,55 +162,65 @@
             document.getElementById("time").textContent = `${day}.${month}.${year} ${time}`;
         }
         setInterval(updateTime, 1000);
-        updateTime(); // Initiale Anzeige
+        updateTime();
 
-        // Lade den RSS-Feed der Tagesschau
-        async function fetchRSS() {
+        function loadContent() {
+            const current = urls[currentIndex];
+            if (current.type === "news") {
+                loadNews();
+            } else {
+                frame.src = current.url;
+                frame.style.display = "block";
+                newsContainer.style.display = "none";
+            }
+            startProgressBar(current.duration);
+        }
+
+        async function loadNews() {
             try {
-                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent("https://www.tagesschau.de/xml/rss2")}`);
+                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(urls.find(u => u.type === "news").url)}`);
                 const data = await response.json();
                 const parser = new DOMParser();
                 const xml = parser.parseFromString(data.contents, "text/xml");
                 const items = xml.querySelectorAll("item");
+                const article = items[currentIndex % items.length];
 
-                articles = Array.from(items).map(item => ({
-                    title: item.querySelector("title").textContent,
-                    description: item.querySelector("description").textContent,
-                    image: item.querySelector("enclosure")?.getAttribute("url") || "https://via.placeholder.com/800x400?text=Kein+Bild",
-                }));
-
-                showArticle(); // Zeige den ersten Artikel
+                newsTitle.textContent = article.querySelector("title").textContent;
+                newsDescription.textContent = article.querySelector("description").textContent;
+                newsImage.src = article.querySelector("enclosure")?.getAttribute("url") || "https://via.placeholder.com/800x400?text=Kein+Bild";
+                frame.style.display = "none";
+                newsContainer.style.display = "flex";
             } catch (error) {
                 newsContainer.innerHTML = "<p>Nachrichten konnten nicht geladen werden.</p>";
             }
         }
 
-        // Zeige einen Artikel
-        function showArticle() {
-            if (articles.length === 0) return;
-
-            const article = articles[currentIndex];
-            newsContainer.innerHTML = `
-                <img src="${article.image}" alt="Nachrichtenbild">
-                <h2>${article.title}</h2>
-                <p>${article.description}</p>
-            `;
-
-            startProgressBar(30000); // 30 Sekunden pro Artikel
-            currentIndex = (currentIndex + 1) % articles.length; // Nächster Artikel
-        }
-
-        // Fortschrittsbalken starten
         function startProgressBar(duration) {
+            progressBar.style.transition = "none";
             progressBar.style.width = "100%";
-            progressBar.style.transition = `width ${duration / 1000}s linear`;
-            progressBar.style.width = "0%";
-
-            setTimeout(showArticle, duration); // Nächster Artikel nach Ablauf
+            setTimeout(() => {
+                progressBar.style.transition = `width ${duration / 1000}s linear`;
+                progressBar.style.width = "0%";
+            }, 10);
         }
 
-        // Lade den RSS-Feed beim Start
-        fetchRSS();
+        function switchContent(next = true) {
+            currentIndex = (currentIndex + (next ? 1 : -1) + urls.length) % urls.length;
+            loadContent();
+        }
+
+        document.getElementById("prevBtn").addEventListener("click", () => switchContent(false));
+        document.getElementById("nextBtn").addEventListener("click", () => switchContent(true));
+        document.getElementById("pausePlayBtn").addEventListener("click", () => {
+            autoSlide = !autoSlide;
+            document.getElementById("pausePlayBtn").textContent = autoSlide ? "⏸ Pause" : "▶ Play";
+        });
+
+        setInterval(() => {
+            if (autoSlide) switchContent(true);
+        }, urls[currentIndex].duration);
+
+        loadContent();
     </script>
 </body>
 </html>
