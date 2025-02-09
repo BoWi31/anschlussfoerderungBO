@@ -1,178 +1,154 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Infobildschirm BoWi</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: Arial, sans-serif;
-            background-color: black;
-            color: white;
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Kopfzeile */
-        .header {
-            width: 100%;
-            height: 60px;
-            background-color: #333;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 20px;
-            font-size: 1.5em;
-        }
-        .header .title { font-weight: bold; }
-        .header .time { font-family: monospace; }
-
-        /* Inhalt */
-        .content {
-            width: 100%;
-            height: calc(100vh - 60px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-
-        /* Nachrichten */
-        .news-container {
-            width: 100%;
-            height: 100%;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            text-align: center;
-            padding: 20px;
-        }
-        .news-item img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 10px;
-        }
-        .news-item h2 { font-size: 2em; margin: 10px 0; }
-        .news-item p { font-size: 1.2em; }
-
-        /* IFRAME Styling (Zoom für alte Geräte) */
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
-            zoom: 1.2;
-        }
-
-        /* Fortschrittsbalken */
-        .progress-bar { width: 100%; height: 5px; background-color: #444; position: absolute; bottom: 0; }
-        .progress { height: 100%; background-color: limegreen; width: 0%; transition: width linear; }
-
-        /* Pause/Play Button */
-        .controls {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .controls button {
-            padding: 10px 20px;
-            font-size: 1em;
-            background-color: #555;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anschlussförderung</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-live-bg: #28a745;
+      --color-simulation-bg: #dc3545;
+    }
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      min-height: 100vh;
+      background-color: var(--color-live-bg);
+      animation: pulseGreen 3s infinite alternate;
+      transition: background-color 0.5s ease;
+    }
+    @keyframes pulseGreen {
+      0% { background-color: #28a745; }
+      100% { background-color: #34d058; }
+    }
+    @keyframes pulseRed {
+      0% { background-color: #dc3545; }
+      100% { background-color: #ff4d4d; }
+    }
+    .status-container {
+      background: white;
+      color: #212529;
+      padding: 2em;
+      border-radius: 10px;
+      box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+      max-width: 650px;
+      width: 90%;
+      text-align: center;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+    }
+  </style>
 </head>
 <body>
-    <div class="header">
-        <div class="title">Infobildschirm BoWi</div>
-        <div class="time" id="time"></div>
+  <div class="status-container" id="status-container">
+    <h1 id="status-title">Keine Anschlussförderung ✅</h1>
+    <div id="next-session">
+      <strong>Nächste Förderung:</strong> Wird geladen...
+      <div id="countdown"></div>
     </div>
+    <div id="schueler-liste" style="display: none;"></div>
+  </div>
+  <button id="toggle-button" onclick="toggleSimulation()">🔘 Nächste Anschlussförderung</button>
+  <script>
+    const foerderzeiten = [
+      { gruppe: "A", lehrkraft: "Can", fach: "Deutsch", day: 1, stunde: "3./4. Stunde", raum: "W204", start: "09:30" },
+      { gruppe: "B", lehrkraft: "Tun", fach: "Deutsch", day: 2, stunde: "3./4. Stunde", raum: "W204", start: "09:30" },
+      { gruppe: "C", lehrkraft: "Woi", fach: "Deutsch", day: 3, stunde: "3./4. Stunde", raum: "W204", start: "09:30" }
+    ];
 
-    <div class="content">
-        <iframe id="frame"></iframe>
-        <div id="newsContainer" class="news-container"></div>
-    </div>
+    const schuelerGruppen = {
+      "A": [{ name: "Alina", klasse: "5.1" }, { name: "Daniil", klasse: "6.1" }],
+      "B": [{ name: "Anastasia", klasse: "5a" }, { name: "Marin", klasse: "7.1" }],
+      "C": [{ name: "Maja", klasse: "6a" }, { name: "Emma", klasse: "7.2" }]
+    };
 
-    <div class="controls">
-        <button id="pausePlayBtn">⏸ Pause</button>
-    </div>
-    <div class="progress-bar">
-        <div class="progress" id="progress"></div>
-    </div>
+    let isSimulationMode = false;
 
-    <script>
-        const urls = [
-            { type: "news", url: "https://www.tagesschau.de/xml/rss2", duration: 30000 },
-            { type: "iserv", url: "https://bowi-peine.eu/iserv/public/infodisplay/show/129/c6af9a78ff8616fa33578ec862619bee", duration: 30000 },
-            { type: "custom", url: "https://bowi31.github.io/anschlussfoerderung/", duration: 15000 },
-            { type: "weather", url: "https://www.meteoblue.com/de/wetter/widget/three/peine", duration: 15000 }
-        ];
-        let index = 0;
-        let autoSlide = true;
-        let timer;
-        const frame = document.getElementById("frame");
-        const newsContainer = document.getElementById("newsContainer");
-        const pausePlayBtn = document.getElementById("pausePlayBtn");
-        const progressBar = document.getElementById("progress");
+    function getNextSession() {
+      const now = new Date();
+      let upcomingSessions = foerderzeiten.map(session => {
+        const sessionDate = new Date();
+        sessionDate.setDate(now.getDate() + ((session.day - now.getDay() + 7) % 7));
+        sessionDate.setHours(parseInt(session.start.split(":")[0]), parseInt(session.start.split(":")[1]), 0);
+        session.sessionTime = sessionDate;
+        return session;
+      }).filter(session => session.sessionTime > now);
 
-        function updateTime() {
-            const now = new Date();
-            document.getElementById("time").textContent = now.toLocaleDateString('de-DE') + " " + now.toLocaleTimeString('de-DE');
-        }
-        setInterval(updateTime, 1000);
+      upcomingSessions.sort((a, b) => a.sessionTime - b.sessionTime);
+      return upcomingSessions.length > 0 ? upcomingSessions[0] : null;
+    }
 
-        function loadContent() {
-            const current = urls[index];
-            frame.style.display = "none";
-            newsContainer.style.display = "none";
+    function updateCountdown(targetTime) {
+      const countdownDiv = document.getElementById("countdown");
+      const now = new Date();
+      const timeLeft = targetTime - now;
 
-            if (current.type === "news") {
-                fetchNews(current.url);
-                newsContainer.style.display = "flex";
-            } else if (current.type === "iserv") {
-                window.location.href = current.url; // IServ direkt öffnen
-            } else {
-                frame.src = current.url;
-                frame.style.display = "block";
-            }
-            startProgressBar(current.duration);
-        }
+      if (timeLeft <= 0) {
+        countdownDiv.textContent = "Die Förderung beginnt jetzt!";
+        return;
+      }
 
-        function fetchNews(rssUrl) {
-            const xhr = new XMLHttpRequest();
-            xhr.open("GET", `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`);
-            xhr.onload = function () {
-                if (xhr.status === 200) {
-                    const data = JSON.parse(xhr.responseText).contents;
-                    newsContainer.innerHTML = `<h2>Nachrichten nicht unterstützt</h2><p>RSS-Feeds werden auf diesem Gerät nicht geladen.</p>`;
-                }
-            };
-            xhr.send();
-        }
+      const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
 
-        function startProgressBar(duration) {
-            progressBar.style.width = "100%";
-            progressBar.style.transition = `width ${duration / 1000}s linear`;
-            progressBar.style.width = "0%";
-        }
+      countdownDiv.textContent = `Startet in: ${hours}h ${minutes}m ${seconds}s`;
+    }
 
-        function switchContent() {
-            index = (index + 1) % urls.length;
-            loadContent();
-        }
+    function updateStatus() {
+      const nextSession = getNextSession();
+      const nextSessionDiv = document.getElementById("next-session");
+      const schuelerListeDiv = document.getElementById("schueler-liste");
 
-        window.onload = () => {
-            loadContent();
-            setInterval(() => { if (autoSlide) switchContent(); }, urls[index].duration);
-        };
-    </script>
+      if (nextSession) {
+        const schuelerListe = schuelerGruppen[nextSession.gruppe]
+          ?.map(s => `${s.name} (Klasse ${s.klasse})`)
+          .join("<br>");
+
+        nextSessionDiv.innerHTML = `
+          <strong>Nächste Förderung:</strong> ${nextSession.fach} (Gruppe ${nextSession.gruppe})<br>
+          Zeit: ${nextSession.stunde}, Raum: ${nextSession.raum}<br>
+          <div id="countdown"></div>
+        `;
+
+        schuelerListeDiv.style.display = isSimulationMode ? "block" : "none";
+        schuelerListeDiv.innerHTML = isSimulationMode ? `<strong>Schüler:</strong><br>${schuelerListe}` : "";
+
+        updateCountdown(nextSession.sessionTime);
+      } else {
+        nextSessionDiv.innerHTML = `<strong>Nächste Förderung:</strong> Keine weiteren Termine.`;
+        schuelerListeDiv.style.display = "none";
+      }
+    }
+
+    function toggleSimulation() {
+      isSimulationMode = !isSimulationMode;
+      document.body.style.animation = isSimulationMode ? "pulseRed 3s infinite alternate" : "pulseGreen 3s infinite alternate";
+
+      const toggleButton = document.getElementById("toggle-button");
+      toggleButton.textContent = isSimulationMode ? "🔘 Live-Modus" : "🔘 Nächste Anschlussförderung";
+
+      updateStatus();
+    }
+
+    updateStatus();
+    setInterval(updateStatus, 60000);
+  </script>
 </body>
 </html>
