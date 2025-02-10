@@ -139,7 +139,6 @@
         ];
 
         let nextSession = null;
-        let simulatedMode = false;
 
         function findNextSession() {
             const now = new Date();
@@ -151,42 +150,33 @@
                     sessionTime.setDate(now.getDate() + ((time.day - now.getDay() + 7) % 7));
                     let [hours, minutes] = time.start.split(":").map(Number);
                     sessionTime.setHours(hours, minutes, 0);
-                    
+
                     if (sessionTime > now && (!nextSession || sessionTime < nextSession.time)) {
-                        nextSession = { teacher: group.teacher, time: sessionTime, group: group.group, students: group.students };
+                        nextSession = { teacher: group.teacher, time: sessionTime, group: group.group };
                     }
                 });
             });
-        }
 
-        function toggleSimulation() {
-            simulatedMode = !simulatedMode;
-            document.body.style.animation = simulatedMode ? "pulseRed 3s infinite" : "pulseGreen 3s infinite";
-            document.getElementById("alertBox").style.display = simulatedMode ? "block" : "none";
-            document.getElementById("mainTitle").style.display = simulatedMode ? "none" : "block";
-
-            if (simulatedMode && nextSession) {
-                let groupedStudents = {};
-                nextSession.students.forEach(s => {
-                    let [name, klasse] = s.split(" (");
-                    klasse = klasse.replace(")", "");
-                    if (!groupedStudents[klasse]) groupedStudents[klasse] = [];
-                    groupedStudents[klasse].push(name);
-                });
-
-                let sortedClasses = Object.keys(groupedStudents).sort();
-                let studentList = sortedClasses.map(klasse => 
-                    `<strong>${klasse}:</strong> ${groupedStudents[klasse].sort().join(", ")}`)
-                    .join("<br>");
-
-                document.getElementById("groupInfo").innerHTML = `<h2>Lehrkraft: ${nextSession.teacher}</h2><p>${studentList}</p>`;
+            const btn = document.getElementById("nextSession");
+            if (nextSession) {
+                btn.innerHTML = `Nächste Anschlussförderung: ${nextSession.time.toLocaleString('de-DE', {
+                    weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                })} (Gruppe ${nextSession.group} - ${nextSession.teacher})`;
             } else {
-                document.getElementById("groupInfo").innerHTML = "";
-                findNextSession();
+                btn.innerHTML = "Keine weiteren Anschlussförderungen.";
             }
         }
 
-        document.getElementById("nextSession").addEventListener("click", toggleSimulation);
+        document.getElementById("overviewButton").addEventListener("click", function() {
+            let overviewTable = `<h2>Alle Gruppen</h2><table><tr><th>Gruppe</th><th>Lehrkraft</th><th>Zeiten</th></tr>`;
+            schedule.forEach(group => {
+                let times = group.times.map(time => `Tag ${time.day}: ${time.start} - ${time.end}`).join("<br>");
+                overviewTable += `<tr><td>Gruppe ${group.group}</td><td>${group.teacher}</td><td>${times}</td></tr>`;
+            });
+            overviewTable += "</table>";
+            document.getElementById("groupInfo").innerHTML = overviewTable;
+        });
+
         findNextSession();
     </script>
 </body>
