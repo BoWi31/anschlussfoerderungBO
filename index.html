@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anschlussförderung Übersicht</title>
+    <title>Keine Anschlussförderung</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,7 +11,7 @@
             transition: background-color 1s ease-in-out;
             animation: pulseGreen 3s infinite;
             margin: 0;
-            padding: 0;
+            padding: 10px;
         }
 
         @keyframes pulseGreen {
@@ -26,165 +26,156 @@
             100% { background-color: #ff6961; }
         }
 
-        .container {
-            max-width: 90%;
-            margin: auto;
-            padding: 20px;
-        }
-
-        h1 {
-            font-size: 2rem;
-            font-weight: bold;
-            color: black;
-            text-transform: uppercase;
-            background-color: white;
-            padding: 15px;
-            border-radius: 10px;
-            display: inline-block;
-            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-        }
-
         .alert {
             display: none;
-            font-size: 1.2rem;
+            font-size: 18px;
             font-weight: bold;
             color: white;
             background-color: red;
-            padding: 15px;
-            margin: 20px auto;
+            padding: 12px;
+            margin: 10px auto;
+            width: 90%;
+            max-width: 400px;
             border-radius: 10px;
-            max-width: 90%;
-        }
-
-        .button-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            margin: 20px auto;
         }
 
         .next-session {
-            font-size: 1rem;
+            font-size: 18px;
             font-weight: bold;
             background: linear-gradient(135deg, #007bff, #0056b3);
             color: white;
             border: none;
             padding: 12px;
+            margin: 10px auto;
             width: 90%;
             max-width: 400px;
             border-radius: 10px;
             box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
             cursor: pointer;
-            transition: opacity 0.3s, background 0.3s;
+            transition: opacity 0.3s;
         }
-
         .next-session:hover { opacity: 0.8; }
-        .active {
-            background: linear-gradient(135deg, #ff4444, #cc0000);
-            animation: pulseRed 3s infinite;
+
+        h1 {
+            font-size: 24px;
+            font-weight: bold;
+            color: black;
+            text-transform: uppercase;
+            background-color: white;
+            padding: 10px;
+            border-radius: 10px;
+            display: inline-block;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+            max-width: 90%;
         }
 
-        .table-container {
+        #groupInfo {
+            max-width: 90%;
+            margin: auto;
             overflow-x: auto;
-            margin-top: 20px;
         }
 
         table {
             width: 100%;
-            max-width: 800px;
+            max-width: 600px;
             margin: auto;
             border-collapse: collapse;
+            border: 2px solid white;
             background-color: white;
             box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
         }
 
         th, td {
-            border: 1px solid black;
-            padding: 10px;
+            padding: 8px;
             text-align: left;
+            border-bottom: 1px solid #ddd;
         }
 
         th {
             background-color: #007bff;
             color: white;
         }
+
+        @media (max-width: 600px) {
+            body {
+                font-size: 16px;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 id="mainTitle">Keine Anschlussförderung ✅</h1>
-        <div id="alertBox" class="alert">Anschlussförderung aktiv!</div>
-        <div class="button-container">
-            <button id="nextSession" class="next-session">Nächste Anschlussförderung: Wird geladen...</button>
-            <button id="overviewButton" class="next-session">Übersicht</button>
-        </div>
-        <div id="groupInfo" class="table-container"></div>
-    </div>
+    <h1 id="mainTitle">Keine Anschlussförderung ✅</h1>
+    <div id="alertBox" class="alert">Anschlussförderung aktiv!</div>
+    <div id="groupInfo"></div>
+    <button id="nextSession" class="next-session">Nächste Anschlussförderung: Wird geladen...</button>
+    <button id="overviewButton" class="next-session">Übersicht</button>
 
     <script>
         const schedule = [
-            { teacher: "Woi", group: "C", times: [{ day: 1, start: "07:40", end: "09:30" }, { day: 3, start: "09:30", end: "11:20" }], students: ["Maja (6a)", "Arina (6a)"] },
-            { teacher: "Can", group: "A", times: [{ day: 1, start: "09:30", end: "11:20" }, { day: 3, start: "11:20", end: "13:10" }], students: ["Alina (5.1)", "Daniil (6.1)"] },
-            { teacher: "Tun", group: "B", times: [{ day: 2, start: "09:30", end: "11:20" }, { day: 4, start: "07:40", end: "09:30" }], students: ["Anastasia (5a)", "Krisztian (6.1)"] }
-        ];
+            { teacher: "Woi", group: "C", times: [
+                { day: 1, start: "07:40", end: "09:30" },
+                { day: 3, start: "09:30", end: "11:20" },
+                { day: 5, start: "09:30", end: "11:20" }
+            ], students: ["Maja (6a)", "Arina (6a)", "Tymofii (7.2)", "Emma (7.2)", "Ilyas (7.2)", "Ili (7.2)", "Sofia (7a)"] },
+            
+            { teacher: "Can", group: "A", times: [
+                { day: 1, start: "09:30", end: "11:20" },
+                { day: 3, start: "11:20", end: "13:10" },
+                { day: 4, start: "09:30", end: "11:20" }
+            ], students: ["Alina (5.1)", "Daniil (6.1)", "Mohammed L. (6.1)", "Evelina (7.1)", "Beyar (7.2)", "Artur (7.2)", "Bahar (7a)"] },
 
-        let nextSession = null;
+            { teacher: "Tun", group: "B", times: [
+                { day: 2, start: "09:30", end: "11:20" },
+                { day: 4, start: "07:40", end: "09:30" },
+                { day: 5, start: "07:40", end: "09:30" }
+            ], students: ["Anastasia (5a)", "Krisztian (6.1)", "Selena (6a)", "Arzoo (7.1)", "Marin (7.1)", "Mohammed H. (7.1)"] }
+        ];
 
         function findNextSession() {
             const now = new Date();
-            nextSession = null;
+            let nextSession = null;
 
             schedule.forEach(group => {
                 group.times.forEach(time => {
                     let sessionTime = new Date();
                     sessionTime.setDate(now.getDate() + ((time.day - now.getDay() + 7) % 7));
-                    [hours, minutes] = time.start.split(":").map(Number);
+                    let [hours, minutes] = time.start.split(":").map(Number);
                     sessionTime.setHours(hours, minutes, 0);
-
-                    let endTime = new Date(sessionTime);
-                    [endHours, endMinutes] = time.end.split(":").map(Number);
-                    endTime.setHours(endHours, endMinutes, 0);
-
+                    
                     if (sessionTime > now && (!nextSession || sessionTime < nextSession.time)) {
-                        nextSession = { teacher: group.teacher, time: sessionTime, endTime: endTime, group: group.group };
+                        nextSession = { teacher: group.teacher, time: sessionTime, group: group.group };
                     }
                 });
             });
 
-            updateUI();
-        }
-
-        function updateUI() {
             const btn = document.getElementById("nextSession");
-            const alertBox = document.getElementById("alertBox");
-
             if (nextSession) {
-                btn.innerHTML = `Nächste: ${nextSession.time.toLocaleString('de-DE', { weekday: 'long', hour: '2-digit', minute: '2-digit' })} (Gruppe ${nextSession.group}, ${nextSession.teacher})`;
-
-                const now = new Date();
-                if (now >= nextSession.time && now <= nextSession.endTime) {
-                    document.body.style.animation = "pulseRed 3s infinite";
-                    btn.classList.add("active");
-                    btn.innerHTML = `Anschlussförderung AKTIV! (Gruppe ${nextSession.group}, ${nextSession.teacher})`;
-                    alertBox.style.display = "block";
-                } else {
-                    document.body.style.animation = "pulseGreen 3s infinite";
-                    btn.classList.remove("active");
-                    alertBox.style.display = "none";
-                }
+                btn.innerHTML = `Nächste Anschlussförderung: ${nextSession.time.toLocaleString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} (Gruppe ${nextSession.group} - ${nextSession.teacher})`;
+            } else {
+                btn.innerHTML = "Keine weiteren Anschlussförderungen.";
             }
         }
 
-        function showOverview() {
-            let overviewTable = "<h2>Alle Termine</h2><table><tr><th>Lehrkraft</th><th>Gruppe</th><th>Tag</th><th>Startzeit</th><th>Endzeit</th></tr>";
-            schedule.forEach(group => group.times.forEach(time => overviewTable += `<tr><td>${group.teacher}</td><td>${group.group}</td><td>${time.day}</td><td>${time.start}</td><td>${time.end}</td></tr>`));
+        document.getElementById("overviewButton").addEventListener("click", function() {
+            let overviewTable = `<h2>Alle Förderzeiten</h2>
+            <table>
+            <tr><th>Lehrkraft</th><th>Gruppe</th><th>Tag</th><th>Start</th><th>Ende</th><th>Schüler:innen</th></tr>`;
+            schedule.forEach(group => {
+                group.times.forEach(time => {
+                    overviewTable += `<tr><td>${group.teacher}</td><td>${group.group}</td><td>${time.day}</td><td>${time.start}</td><td>${time.end}</td><td>${group.students.join(", ")}</td></tr>`;
+                });
+            });
             overviewTable += "</table>";
             document.getElementById("groupInfo").innerHTML = overviewTable;
-        }
+        });
 
-        setInterval(updateUI, 1000);
-        document.getElementById("overviewButton").addEventListener("click", showOverview);
         findNextSession();
     </script>
 </body>
