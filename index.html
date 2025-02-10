@@ -157,13 +157,6 @@
                     }
                 });
             });
-
-            const btn = document.getElementById("nextSession");
-            if (nextSession) {
-                btn.innerHTML = `Nächste Anschlussförderung: ${nextSession.time.toLocaleString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} (Gruppe ${nextSession.group} - ${nextSession.teacher})`;
-            } else {
-                btn.innerHTML = "Keine weiteren Anschlussförderungen.";
-            }
         }
 
         function toggleSimulation() {
@@ -171,11 +164,22 @@
             document.body.style.animation = simulatedMode ? "pulseRed 3s infinite" : "pulseGreen 3s infinite";
             document.getElementById("alertBox").style.display = simulatedMode ? "block" : "none";
             document.getElementById("mainTitle").style.display = simulatedMode ? "none" : "block";
-            document.getElementById("nextSession").textContent = simulatedMode ? "Simulation stoppen" : "Nächste Anschlussförderung";
 
             if (simulatedMode && nextSession) {
-                let studentsList = nextSession.students.join(", ");
-                document.getElementById("groupInfo").innerHTML = `<h2>Lehrkraft: ${nextSession.teacher}</h2><p><strong>Schüler:innen:</strong> ${studentsList}</p>`;
+                let groupedStudents = {};
+                nextSession.students.forEach(s => {
+                    let [name, klasse] = s.split(" (");
+                    klasse = klasse.replace(")", "");
+                    if (!groupedStudents[klasse]) groupedStudents[klasse] = [];
+                    groupedStudents[klasse].push(name);
+                });
+
+                let sortedClasses = Object.keys(groupedStudents).sort();
+                let studentList = sortedClasses.map(klasse => 
+                    `<strong>${klasse}:</strong> ${groupedStudents[klasse].sort().join(", ")}`)
+                    .join("<br>");
+
+                document.getElementById("groupInfo").innerHTML = `<h2>Lehrkraft: ${nextSession.teacher}</h2><p>${studentList}</p>`;
             } else {
                 document.getElementById("groupInfo").innerHTML = "";
                 findNextSession();
