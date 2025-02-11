@@ -116,26 +116,10 @@
             ], students: ["Alle Sprachjongleure"] }
         ];
 
-        function showOverview() {
-            let content = "<h2>Übersicht</h2>";
-
-            schedule.forEach(group => {
-                content += `<h3>Gruppe ${group.group} - ${group.teacher}</h3>`;
-                content += `<p>Schüler:innen: ${group.students.join(", ")}</p>`;
-            });
-
-            content += "<h2>Termine</h2>";
-            schedule.forEach(group => {
-                group.times.forEach(time => {
-                    content += `<p><strong>${weekDays[time.day]}:</strong> ${time.start} - ${time.end} (Gruppe ${group.group} - ${group.teacher})</p>`;
-                });
-            });
-
-            document.getElementById("groupInfo").innerHTML = content;
-        }
-
         function checkSessionStatus() {
             const now = new Date();
+            let activeSession = null;
+            let warningSession = null;
             let nextSession = null;
 
             schedule.forEach(group => {
@@ -144,11 +128,29 @@
                     sessionStart.setDate(now.getDate() + ((time.day - now.getDay() + 7) % 7));
                     sessionStart.setHours(...time.start.split(":").map(Number), 0);
 
-                    if (sessionStart > now && (!nextSession || sessionStart < nextSession.time)) {
-                        nextSession = { teacher: group.teacher, group: group.group, time: sessionStart, students: group.students };
+                    let warningTime = new Date(sessionStart);
+                    warningTime.setMinutes(warningTime.getMinutes() - 15);
+
+                    if (now >= sessionStart) {
+                        activeSession = { teacher: group.teacher, group: group.group, students: group.students };
+                    } else if (now >= warningTime) {
+                        warningSession = { teacher: group.teacher, group: group.group, time: sessionStart, students: group.students };
+                    } else if (!nextSession || sessionStart < nextSession.time) {
+                        nextSession = { teacher: group.teacher, time: sessionStart, group: group.group, students: group.students };
                     }
                 });
             });
+
+            if (activeSession) {
+                document.body.style.animation = "pulseRed 3s infinite";
+                document.getElementById("mainTitle").innerText = "Anschlussförderung läuft!";
+            } else if (warningSession) {
+                document.body.style.animation = "pulseYellow 3s infinite";
+                document.getElementById("mainTitle").innerText = "Gleich Anschlussförderung!";
+            } else {
+                document.body.style.animation = "pulseGreen 3s infinite";
+                document.getElementById("mainTitle").innerText = "Keine Anschlussförderung ✅";
+            }
 
             if (nextSession) {
                 let btn = document.getElementById("nextSessionBtn");
@@ -158,8 +160,8 @@
             }
         }
 
-        document.getElementById("overviewBtn").addEventListener("click", showOverview);
         checkSessionStatus();
+        setInterval(checkSessionStatus, 30000);
     </script>
 </body>
 </html>
