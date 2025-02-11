@@ -82,22 +82,43 @@
         let simulatedMode = false;
 
         function findNextSession() {
-            const now = new Date();
-            nextSession = null;
+    const now = new Date();
+    nextSession = null;
+    console.log("Aktuelles Datum:", now);
 
-            schedule.forEach(group => {
-                group.times.forEach(time => {
-                    let sessionTime = new Date();
-                    sessionTime.setDate(now.getDate() + ((time.day - now.getDay() + 7) % 7));
-                    [hours, minutes] = time.start.split(":").map(Number);
-                    sessionTime.setHours(hours, minutes, 0);
-                    
-                    if (sessionTime > now && (!nextSession || sessionTime < nextSession.time)) {
-                        nextSession = { teacher: group.teacher, time: sessionTime, group: group.group, students: group.students };
-                    }
-                });
-            });
+    schedule.forEach(group => {
+        group.times.forEach(time => {
+            let sessionStart = new Date();
+            let sessionEnd = new Date();
+            
+            sessionStart.setDate(now.getDate() + ((time.day - now.getDay() + 7) % 7));
+            sessionEnd.setDate(sessionStart.getDate());
 
+            let [startHours, startMinutes] = time.start.split(":").map(Number);
+            let [endHours, endMinutes] = time.end.split(":").map(Number);
+
+            sessionStart.setHours(startHours, startMinutes, 0);
+            sessionEnd.setHours(endHours, endMinutes, 0);
+
+            console.log(`Prüfe: ${group.teacher}, Tag: ${time.day}, Start: ${sessionStart}, Ende: ${sessionEnd}`);
+
+            // 1. Falls die Sitzung gerade läuft, sofort setzen!
+            if (now >= sessionStart && now <= sessionEnd) {
+                nextSession = { teacher: group.teacher, time: sessionStart, group: group.group, students: group.students };
+                console.log("Laufende Sitzung erkannt!", nextSession);
+                return;
+            }
+
+            // 2. Falls es die nächste zukünftige Sitzung ist, speichern
+            if (sessionStart > now && (!nextSession || sessionStart < nextSession.time)) {
+                nextSession = { teacher: group.teacher, time: sessionStart, group: group.group, students: group.students };
+                console.log("Neue nächste Sitzung gefunden:", nextSession);
+            }
+        });
+    });
+
+    console.log("Endgültige nächste Sitzung:", nextSession);
+}
             const btn = document.getElementById("nextSession");
             if (nextSession) {
                 btn.innerHTML = `Nächste Anschlussförderung: ${nextSession.time.toLocaleString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} (Gruppe ${nextSession.group} - ${nextSession.teacher})`;
