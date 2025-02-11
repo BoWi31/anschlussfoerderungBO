@@ -80,6 +80,24 @@
             margin: auto;
             overflow-x: auto;
         }
+
+        .popup {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 500px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .popup button {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -89,6 +107,11 @@
     <button id="nextSessionBtn" class="info-btn" style="display:none;"></button>
     <button id="overviewBtn" class="info-btn">Übersicht</button>
 
+    <div id="popup" class="popup">
+        <div id="popupContent"></div>
+        <button class="info-btn" onclick="closePopup()">Schließen</button>
+    </div>
+
     <script>
         const weekDays = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 
@@ -97,29 +120,11 @@
                 { day: 1, start: "08:00", end: "09:30" },
                 { day: 3, start: "09:50", end: "11:20" },
                 { day: 5, start: "09:50", end: "11:20" }
-            ], students: ["Maja (6a)", "Arina (6a)", "Tymofii (7.2)", "Emma (7.2)", "Ilyas (7.2)", "Ili (7.2)", "Sofia (7a)"] },
-
-            { teacher: "Can", group: "A", times: [
-                { day: 1, start: "09:50", end: "11:20" },
-                { day: 3, start: "11:40", end: "13:10" },
-                { day: 4, start: "09:50", end: "11:20" }
-            ], students: ["Alina (5.1)", "Daniil (6.1)", "Mohammed L. (6.1)", "Evelina (7.1)", "Beyar (7.2)", "Artur (7.2)", "Bahar (7a)"] },
-
-            { teacher: "Tun", group: "B", times: [
-                { day: 2, start: "09:50", end: "11:20" },
-                { day: 4, start: "08:00", end: "09:30" },
-                { day: 5, start: "08:00", end: "09:30" }
-            ], students: ["Anastasia (5a)", "Krisztian (6.1)", "Selena (6a)", "Arzoo (7.1)", "Marin (7.1)", "Mohammed H. (7.1)"] },
-
-            { teacher: "Beu", group: "D", times: [
-                { day: 2, start: "11:40", end: "13:10" }
-            ], students: ["Alle Sprachjongleure"] }
+            ], students: ["Maja (6a)", "Arina (6a)", "Tymofii (7.2)", "Emma (7.2)", "Ilyas (7.2)", "Ili (7.2)", "Sofia (7a)"] }
         ];
 
         function checkSessionStatus() {
             const now = new Date();
-            let activeSession = null;
-            let warningSession = null;
             let nextSession = null;
 
             schedule.forEach(group => {
@@ -128,38 +133,34 @@
                     sessionStart.setDate(now.getDate() + ((time.day - now.getDay() + 7) % 7));
                     sessionStart.setHours(...time.start.split(":").map(Number), 0);
 
-                    let sessionEnd = new Date(sessionStart);
-                    sessionEnd.setHours(...time.end.split(":").map(Number), 0);
-
-                    let warningTime = new Date(sessionStart);
-                    warningTime.setMinutes(warningTime.getMinutes() - 15);
-
-                    if (now >= sessionStart && now <= sessionEnd) {
-                        activeSession = { teacher: group.teacher, group: group.group, students: group.students };
-                    } else if (now >= warningTime && now < sessionStart) {
-                        warningSession = { teacher: group.teacher, group: group.group, students: group.students, time: sessionStart };
-                    } else if (!nextSession || sessionStart < nextSession.time) {
+                    if (!nextSession || sessionStart < nextSession.time) {
                         nextSession = { teacher: group.teacher, time: sessionStart, group: group.group, students: group.students };
                     }
                 });
             });
 
-            if (activeSession) {
-                document.body.style.animation = "pulseRed 3s infinite";
-                document.getElementById("mainTitle").innerText = `Anschlussförderung: Gruppe ${activeSession.group} (${activeSession.teacher})`;
-                document.getElementById("groupInfo").innerHTML = `<p><strong>Schüler:innen:</strong> ${activeSession.students.join(", ")}</p>`;
-            } else if (warningSession) {
-                document.body.style.animation = "pulseYellow 3s infinite";
-                document.getElementById("mainTitle").innerText = "Gleich Anschlussförderung!";
-                document.getElementById("groupInfo").innerHTML = `<p>Nächste Gruppe: ${warningSession.group} (${warningSession.teacher}) - ${warningSession.time.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</p>`;
-            } else {
-                document.body.style.animation = "pulseGreen 3s infinite";
-                document.getElementById("mainTitle").innerText = "Keine Anschlussförderung ✅";
+            if (nextSession) {
+                let btn = document.getElementById("nextSessionBtn");
+                btn.style.display = "block";
+                btn.innerText = `Nächste: ${weekDays[nextSession.time.getDay()]} ${nextSession.time.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} (Gruppe ${nextSession.group} - ${nextSession.teacher})`;
+                btn.onclick = () => showPopup(`Schüler:innen: ${nextSession.students.join(", ")}`);
             }
         }
 
+        function showPopup(content) {
+            document.getElementById("popupContent").innerHTML = content;
+            document.getElementById("popup").style.display = "block";
+        }
+
+        function closePopup() {
+            document.getElementById("popup").style.display = "none";
+        }
+
+        document.getElementById("overviewBtn").addEventListener("click", () => {
+            showPopup("<h2>Übersicht</h2><p>Hier kommt die Gruppenübersicht & Termine rein!</p>");
+        });
+
         checkSessionStatus();
-        setInterval(checkSessionStatus, 30000);
     </script>
 </body>
 </html>
