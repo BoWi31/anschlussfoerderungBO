@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Keine Anschlussförderung</title>
+    <title>Anschlussförderung</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,36 +14,9 @@
             padding: 10px;
         }
 
-        @keyframes pulseGreen {
-            0% { background-color: #5cb85c; }
-            50% { background-color: #4cae4c; }
-            100% { background-color: #5cb85c; }
-        }
-
-        @keyframes pulseYellow {
-            0% { background-color: #ffcc00; }
-            50% { background-color: #ffdb4d; }
-            100% { background-color: #ffcc00; }
-        }
-
-        @keyframes pulseRed {
-            0% { background-color: #ff6961; }
-            50% { background-color: #ff8782; }
-            100% { background-color: #ff6961; }
-        }
-
-        .alert {
-            font-size: 18px;
-            font-weight: bold;
-            color: white;
-            background-color: red;
-            padding: 12px;
-            margin: 10px auto;
-            width: 90%;
-            max-width: 400px;
-            border-radius: 10px;
-            display: none;
-        }
+        @keyframes pulseGreen { 0% { background-color: #5cb85c; } 50% { background-color: #4cae4c; } 100% { background-color: #5cb85c; } }
+        @keyframes pulseYellow { 0% { background-color: #ffcc00; } 50% { background-color: #ffdb4d; } 100% { background-color: #ffcc00; } }
+        @keyframes pulseRed { 0% { background-color: #ff6961; } 50% { background-color: #ff8782; } 100% { background-color: #ff6961; } }
 
         .info-btn {
             font-size: 18px;
@@ -56,53 +29,18 @@
             width: 90%;
             max-width: 400px;
             border-radius: 10px;
-            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
             cursor: pointer;
-            transition: opacity 0.3s;
         }
+
         .info-btn:hover { opacity: 0.8; }
-
-        h1 {
-            font-size: 24px;
-            font-weight: bold;
-            color: black;
-            text-transform: uppercase;
-            background-color: white;
-            padding: 10px;
-            border-radius: 10px;
-            display: inline-block;
-            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-            max-width: 90%;
-        }
-
-        #groupInfo {
-            max-width: 90%;
-            margin: auto;
-            overflow-x: auto;
-        }
-
-        .popup {
-            position: fixed;
-            top: 20%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 500px;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
-            display: none;
-        }
-
-        .popup button {
-            margin-top: 10px;
-        }
+        h1 { font-size: 24px; font-weight: bold; background-color: white; padding: 10px; border-radius: 10px; max-width: 90%; display: inline-block; }
+        #groupInfo { max-width: 90%; margin: auto; overflow-x: auto; }
+        .popup { position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: white; padding: 15px; border-radius: 10px; display: none; }
+        .popup button { margin-top: 10px; }
     </style>
 </head>
 <body>
     <h1 id="mainTitle">Keine Anschlussförderung ✅</h1>
-    <div id="alertBox" class="alert">Anschlussförderung aktiv!</div>
     <div id="groupInfo"></div>
     <button id="nextSessionBtn" class="info-btn" style="display:none;"></button>
     <button id="overviewBtn" class="info-btn">Übersicht</button>
@@ -114,18 +52,16 @@
 
     <script>
         const weekDays = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
-
         const schedule = [
-            { teacher: "Woi", group: "C", times: [
-                { day: 1, start: "08:00", end: "09:30" },
-                { day: 3, start: "09:50", end: "11:20" },
-                { day: 5, start: "09:50", end: "11:20" }
-            ], students: ["Maja (6a)", "Arina (6a)", "Tymofii (7.2)", "Emma (7.2)", "Ilyas (7.2)", "Ili (7.2)", "Sofia (7a)"] }
+            { teacher: "Woi", group: "C", times: [{ day: 1, start: "08:00", end: "09:30" }, { day: 3, start: "09:50", end: "11:20" }], students: ["Maja (6a)", "Arina (6a)", "Tymofii (7.2)", "Emma (7.2)", "Ilyas (7.2)", "Ili (7.2)", "Sofia (7a)"] },
+            { teacher: "Can", group: "A", times: [{ day: 1, start: "09:50", end: "11:20" }, { day: 3, start: "11:40", end: "13:10" }], students: ["Alina (5.1)", "Daniil (6.1)", "Mohammed L. (6.1)", "Evelina (7.1)", "Beyar (7.2)", "Artur (7.2)", "Bahar (7a)"] },
+            { teacher: "Tun", group: "B", times: [{ day: 2, start: "09:50", end: "11:20" }, { day: 4, start: "08:00", end: "09:30" }], students: ["Anastasia (5a)", "Krisztian (6.1)", "Selena (6a)", "Arzoo (7.1)", "Marin (7.1)", "Mohammed H. (7.1)"] },
+            { teacher: "Beu", group: "D", times: [{ day: 2, start: "11:40", end: "13:10" }], students: ["Alle Sprachjongleure"] }
         ];
 
         function checkSessionStatus() {
             const now = new Date();
-            let nextSession = null;
+            let activeSessions = [], warningSession = null, nextSession = null;
 
             schedule.forEach(group => {
                 group.times.forEach(time => {
@@ -133,34 +69,48 @@
                     sessionStart.setDate(now.getDate() + ((time.day - now.getDay() + 7) % 7));
                     sessionStart.setHours(...time.start.split(":").map(Number), 0);
 
-                    if (!nextSession || sessionStart < nextSession.time) {
+                    let sessionEnd = new Date(sessionStart);
+                    sessionEnd.setHours(...time.end.split(":").map(Number), 0);
+
+                    let warningTime = new Date(sessionStart);
+                    warningTime.setMinutes(warningTime.getMinutes() - 15);
+
+                    if (now >= sessionStart && now <= sessionEnd) {
+                        activeSessions.push({ teacher: group.teacher, group: group.group, students: group.students });
+                    } else if (now >= warningTime && now < sessionStart) {
+                        warningSession = { teacher: group.teacher, group: group.group, time: sessionStart, students: group.students };
+                    } else if (!nextSession || sessionStart < nextSession.time) {
                         nextSession = { teacher: group.teacher, time: sessionStart, group: group.group, students: group.students };
                     }
                 });
             });
 
-            if (nextSession) {
-                let btn = document.getElementById("nextSessionBtn");
-                btn.style.display = "block";
-                btn.innerText = `Nächste: ${weekDays[nextSession.time.getDay()]} ${nextSession.time.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} (Gruppe ${nextSession.group} - ${nextSession.teacher})`;
-                btn.onclick = () => showPopup(`Schüler:innen: ${nextSession.students.join(", ")}`);
+            let title = "Keine Anschlussförderung ✅";
+            let animation = "pulseGreen 3s infinite";
+
+            if (activeSessions.length > 0) {
+                title = `Aktive Förderung: ${activeSessions.map(s => `Gruppe ${s.group} (${s.teacher})`).join(", ")}`;
+                animation = "pulseRed 3s infinite";
+                document.getElementById("groupInfo").innerHTML = activeSessions.map(s => `<p><strong>${s.group} (${s.teacher})</strong>: ${s.students.join(", ")}</p>`).join("");
+            } else if (warningSession) {
+                title = `Gleich Anschlussförderung: Gruppe ${warningSession.group} (${warningSession.teacher})`;
+                animation = "pulseYellow 3s infinite";
+                document.getElementById("groupInfo").innerHTML = `<p><strong>Nächste Gruppe:</strong> ${warningSession.group} (${warningSession.teacher})<br>Schüler:innen: ${warningSession.students.join(", ")}</p>`;
             }
+
+            document.getElementById("mainTitle").innerText = title;
+            document.body.style.animation = animation;
         }
 
-        function showPopup(content) {
-            document.getElementById("popupContent").innerHTML = content;
-            document.getElementById("popup").style.display = "block";
-        }
-
-        function closePopup() {
-            document.getElementById("popup").style.display = "none";
-        }
+        function closePopup() { document.getElementById("popup").style.display = "none"; }
 
         document.getElementById("overviewBtn").addEventListener("click", () => {
-            showPopup("<h2>Übersicht</h2><p>Hier kommt die Gruppenübersicht & Termine rein!</p>");
+            document.getElementById("popupContent").innerHTML = "<h2>Übersicht</h2><p>Hier sind alle Gruppen & Termine!</p>";
+            document.getElementById("popup").style.display = "block";
         });
 
         checkSessionStatus();
+        setInterval(checkSessionStatus, 30000);
     </script>
 </body>
 </html>
