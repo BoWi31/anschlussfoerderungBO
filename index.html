@@ -45,6 +45,23 @@
             border-radius: 10px;
         }
 
+        .info-btn {
+            font-size: 18px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px;
+            margin: 10px auto;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        .info-btn:hover { opacity: 0.8; }
+
         h1 {
             font-size: 24px;
             font-weight: bold;
@@ -69,8 +86,12 @@
     <h1 id="mainTitle">Keine Anschlussförderung ✅</h1>
     <div id="alertBox" class="alert">Anschlussförderung aktiv!</div>
     <div id="groupInfo"></div>
+    <button id="nextSessionBtn" class="info-btn" style="display:none;"></button>
+    <button id="overviewBtn" class="info-btn">Übersicht</button>
 
     <script>
+        const weekDays = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+
         const schedule = [
             { teacher: "Woi", group: "C", times: [
                 { day: 1, start: "08:00", end: "09:30" },
@@ -95,56 +116,50 @@
             ], students: ["Alle Sprachjongleure"] }
         ];
 
+        function showOverview() {
+            let content = "<h2>Übersicht</h2>";
+
+            schedule.forEach(group => {
+                content += `<h3>Gruppe ${group.group} - ${group.teacher}</h3>`;
+                content += `<p>Schüler:innen: ${group.students.join(", ")}</p>`;
+            });
+
+            content += "<h2>Termine</h2>";
+            schedule.forEach(group => {
+                group.times.forEach(time => {
+                    content += `<p><strong>${weekDays[time.day]}:</strong> ${time.start} - ${time.end} (Gruppe ${group.group} - ${group.teacher})</p>`;
+                });
+            });
+
+            document.getElementById("groupInfo").innerHTML = content;
+        }
+
         function checkSessionStatus() {
             const now = new Date();
-            let activeSession = null;
-            let warningSession = null;
             let nextSession = null;
 
             schedule.forEach(group => {
                 group.times.forEach(time => {
                     let sessionStart = new Date();
                     sessionStart.setDate(now.getDate() + ((time.day - now.getDay() + 7) % 7));
-                    let [startHours, startMinutes] = time.start.split(":").map(Number);
-                    sessionStart.setHours(startHours, startMinutes, 0);
+                    sessionStart.setHours(...time.start.split(":").map(Number), 0);
 
-                    let sessionEnd = new Date(sessionStart);
-                    let [endHours, endMinutes] = time.end.split(":").map(Number);
-                    sessionEnd.setHours(endHours, endMinutes, 0);
-
-                    let warningTime = new Date(sessionStart);
-                    warningTime.setMinutes(warningTime.getMinutes() - 15);
-
-                    if (now >= sessionStart && now <= sessionEnd) {
-                        activeSession = { teacher: group.teacher, group: group.group, students: group.students };
-                    } else if (now >= warningTime && now < sessionStart) {
-                        warningSession = { teacher: group.teacher, group: group.group, time: sessionStart };
-                    } else if (sessionStart > now && (!nextSession || sessionStart < nextSession.time)) {
-                        nextSession = { teacher: group.teacher, time: sessionStart, group: group.group };
+                    if (sessionStart > now && (!nextSession || sessionStart < nextSession.time)) {
+                        nextSession = { teacher: group.teacher, group: group.group, time: sessionStart, students: group.students };
                     }
                 });
             });
 
-            if (activeSession) {
-                document.body.style.animation = "pulseRed 3s infinite";
-                document.getElementById("alertBox").style.display = "block";
-                document.getElementById("mainTitle").style.display = "none";
-                document.getElementById("groupInfo").innerHTML = `<h2>Lehrkraft: ${activeSession.teacher}</h2><p><strong>Schüler:innen:</strong> ${activeSession.students.join(", ")}</p>`;
-            } else if (warningSession) {
-                document.body.style.animation = "pulseYellow 3s infinite";
-                document.getElementById("alertBox").style.display = "none";
-                document.getElementById("mainTitle").innerText = "Gleich Anschlussförderung!";
-                document.getElementById("groupInfo").innerHTML = `<h2>⚠️ Baldige Anschlussförderung: ${warningSession.time.toLocaleString('de-DE', { weekday: 'long', hour: '2-digit', minute: '2-digit' })} (Gruppe ${warningSession.group} - ${warningSession.teacher})</h2>`;
-            } else {
-                document.body.style.animation = "pulseGreen 3s infinite";
-                document.getElementById("alertBox").style.display = "none";
-                document.getElementById("mainTitle").innerText = "Keine Anschlussförderung ✅";
-                document.getElementById("groupInfo").innerHTML = nextSession ? `<h2>Nächste Anschlussförderung: ${nextSession.time.toLocaleString('de-DE', { weekday: 'long', hour: '2-digit', minute: '2-digit' })} (Gruppe ${nextSession.group} - ${nextSession.teacher})</h2>` : "<h2>Keine weiteren Anschlussförderungen.</h2>";
+            if (nextSession) {
+                let btn = document.getElementById("nextSessionBtn");
+                btn.style.display = "block";
+                btn.innerText = `Nächste: ${weekDays[nextSession.time.getDay()]} ${nextSession.time.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} (Gruppe ${nextSession.group} - ${nextSession.teacher})`;
+                btn.onclick = () => alert(`Schüler:innen: ${nextSession.students.join(", ")}`);
             }
         }
 
+        document.getElementById("overviewBtn").addEventListener("click", showOverview);
         checkSessionStatus();
-        setInterval(checkSessionStatus, 30000);
     </script>
 </body>
 </html>
