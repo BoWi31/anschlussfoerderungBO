@@ -61,40 +61,6 @@
             margin: auto;
             overflow-x: auto;
         }
-
-        table {
-            width: 100%;
-            max-width: 600px;
-            margin: auto;
-            border-collapse: collapse;
-            border: 2px solid white;
-            background-color: white;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
-            font-size: 14px;
-        }
-
-        th, td {
-            padding: 8px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-
-        @media (max-width: 600px) {
-            body {
-                font-size: 16px;
-            }
-
-            table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-        }
     </style>
 </head>
 <body>
@@ -125,8 +91,11 @@
         ];
 
         let nextSession = null;
+        let simulationMode = false;
 
         function checkSessionStatus() {
+            if (simulationMode) return;
+
             const now = new Date();
             let activeSession = null;
             nextSession = null;
@@ -154,21 +123,31 @@
                 let btn = document.getElementById("nextSessionBtn");
                 btn.style.display = "block";
                 btn.innerText = `Nächste Anschlussförderung: ${nextSession.time.toLocaleString('de-DE', { weekday: 'long', hour: '2-digit', minute: '2-digit' })} (Gruppe ${nextSession.group} - ${nextSession.teacher})`;
-                btn.onclick = simulateActiveSession;
+                btn.onclick = toggleSimulation;
             } else {
                 document.getElementById("nextSessionBtn").style.display = "none";
             }
         }
 
-        function simulateActiveSession() {
-            document.body.style.backgroundColor = "#ff6961";
-            document.getElementById("alertBox").style.display = "block";
-            document.getElementById("mainTitle").style.display = "none";
+        function toggleSimulation() {
+            simulationMode = !simulationMode;
 
-            let studentsList = nextSession.students.join(", ");
-            document.getElementById("groupInfo").innerHTML = `<h2>Lehrkraft: ${nextSession.teacher}</h2><p><strong>Schüler:innen:</strong> ${studentsList}</p>`;
+            if (simulationMode) {
+                document.body.style.backgroundColor = "#ff6961";
+                document.getElementById("alertBox").style.display = "block";
+                document.getElementById("mainTitle").style.display = "none";
 
-            setTimeout(checkSessionStatus, 10000);
+                let studentsList = nextSession.students.join(", ");
+                document.getElementById("groupInfo").innerHTML = `<h2>Lehrkraft: ${nextSession.teacher}</h2><p><strong>Schüler:innen:</strong> ${studentsList}</p>`;
+
+                document.getElementById("nextSessionBtn").innerText = "Simulation stoppen";
+            } else {
+                document.body.style.backgroundColor = "#5cb85c";
+                document.getElementById("alertBox").style.display = "none";
+                document.getElementById("mainTitle").style.display = "block";
+                document.getElementById("groupInfo").innerHTML = "";
+                checkSessionStatus();
+            }
         }
 
         checkSessionStatus();
