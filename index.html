@@ -9,8 +9,21 @@
             font-family: Arial, sans-serif;
             text-align: center;
             transition: background-color 1s ease-in-out;
+            animation: pulseGreen 3s infinite;
             margin: 0;
             padding: 10px;
+        }
+
+        @keyframes pulseGreen {
+            0% { background-color: #5cb85c; }
+            50% { background-color: #4cae4c; }
+            100% { background-color: #5cb85c; }
+        }
+
+        @keyframes pulseRed {
+            0% { background-color: #ff6961; }
+            50% { background-color: #ff8782; }
+            100% { background-color: #ff6961; }
         }
 
         .alert {
@@ -96,6 +109,8 @@
         function checkSessionStatus() {
             if (simulationMode) return;
 
+            document.body.style.animation = "pulseGreen 3s infinite";
+            
             const now = new Date();
             let activeSession = null;
             nextSession = null;
@@ -133,7 +148,7 @@
             simulationMode = !simulationMode;
 
             if (simulationMode) {
-                document.body.style.backgroundColor = "#ff6961";
+                document.body.style.animation = "pulseRed 3s infinite";
                 document.getElementById("alertBox").style.display = "block";
                 document.getElementById("mainTitle").style.display = "none";
 
@@ -142,7 +157,7 @@
 
                 document.getElementById("nextSessionBtn").innerText = "Simulation stoppen";
             } else {
-                document.body.style.backgroundColor = "#5cb85c";
+                document.body.style.animation = "pulseGreen 3s infinite";
                 document.getElementById("alertBox").style.display = "none";
                 document.getElementById("mainTitle").style.display = "block";
                 document.getElementById("groupInfo").innerHTML = "";
