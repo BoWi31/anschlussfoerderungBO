@@ -33,7 +33,6 @@
         }
 
         .alert {
-            display: none;
             font-size: 18px;
             font-weight: bold;
             color: white;
@@ -43,6 +42,7 @@
             width: 90%;
             max-width: 400px;
             border-radius: 10px;
+            display: none;
         }
 
         .info-btn {
@@ -128,13 +128,16 @@
                     sessionStart.setDate(now.getDate() + ((time.day - now.getDay() + 7) % 7));
                     sessionStart.setHours(...time.start.split(":").map(Number), 0);
 
+                    let sessionEnd = new Date(sessionStart);
+                    sessionEnd.setHours(...time.end.split(":").map(Number), 0);
+
                     let warningTime = new Date(sessionStart);
                     warningTime.setMinutes(warningTime.getMinutes() - 15);
 
-                    if (now >= sessionStart) {
+                    if (now >= sessionStart && now <= sessionEnd) {
                         activeSession = { teacher: group.teacher, group: group.group, students: group.students };
-                    } else if (now >= warningTime) {
-                        warningSession = { teacher: group.teacher, group: group.group, time: sessionStart, students: group.students };
+                    } else if (now >= warningTime && now < sessionStart) {
+                        warningSession = { teacher: group.teacher, group: group.group, students: group.students, time: sessionStart };
                     } else if (!nextSession || sessionStart < nextSession.time) {
                         nextSession = { teacher: group.teacher, time: sessionStart, group: group.group, students: group.students };
                     }
@@ -143,20 +146,15 @@
 
             if (activeSession) {
                 document.body.style.animation = "pulseRed 3s infinite";
-                document.getElementById("mainTitle").innerText = "Anschlussförderung läuft!";
+                document.getElementById("mainTitle").innerText = `Anschlussförderung: Gruppe ${activeSession.group} (${activeSession.teacher})`;
+                document.getElementById("groupInfo").innerHTML = `<p><strong>Schüler:innen:</strong> ${activeSession.students.join(", ")}</p>`;
             } else if (warningSession) {
                 document.body.style.animation = "pulseYellow 3s infinite";
                 document.getElementById("mainTitle").innerText = "Gleich Anschlussförderung!";
+                document.getElementById("groupInfo").innerHTML = `<p>Nächste Gruppe: ${warningSession.group} (${warningSession.teacher}) - ${warningSession.time.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</p>`;
             } else {
                 document.body.style.animation = "pulseGreen 3s infinite";
                 document.getElementById("mainTitle").innerText = "Keine Anschlussförderung ✅";
-            }
-
-            if (nextSession) {
-                let btn = document.getElementById("nextSessionBtn");
-                btn.style.display = "block";
-                btn.innerText = `Nächste: ${weekDays[nextSession.time.getDay()]} ${nextSession.time.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} (Gruppe ${nextSession.group} - ${nextSession.teacher})`;
-                btn.onclick = () => alert(`Schüler:innen: ${nextSession.students.join(", ")}`);
             }
         }
 
