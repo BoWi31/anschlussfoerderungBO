@@ -20,6 +20,12 @@
             100% { background-color: #5cb85c; }
         }
 
+        @keyframes pulseYellow {
+            0% { background-color: #ffcc00; }
+            50% { background-color: #ffdb4d; }
+            100% { background-color: #ffcc00; }
+        }
+
         @keyframes pulseRed {
             0% { background-color: #ff6961; }
             50% { background-color: #ff8782; }
@@ -38,23 +44,6 @@
             max-width: 400px;
             border-radius: 10px;
         }
-
-        .next-session-btn {
-            font-size: 18px;
-            font-weight: bold;
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: white;
-            border: none;
-            padding: 12px;
-            margin: 10px auto;
-            width: 90%;
-            max-width: 400px;
-            border-radius: 10px;
-            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-            cursor: pointer;
-            transition: opacity 0.3s;
-        }
-        .next-session-btn:hover { opacity: 0.8; }
 
         h1 {
             font-size: 24px;
@@ -80,44 +69,37 @@
     <h1 id="mainTitle">Keine Anschlussförderung ✅</h1>
     <div id="alertBox" class="alert">Anschlussförderung aktiv!</div>
     <div id="groupInfo"></div>
-    <button id="nextSessionBtn" class="next-session-btn" style="display:none;"></button>
 
     <script>
         const schedule = [
             { teacher: "Woi", group: "C", times: [
-                { day: 1, start: "07:40", end: "09:30" },
-                { day: 3, start: "09:30", end: "11:20" },
-                { day: 5, start: "09:30", end: "11:20" }
+                { day: 1, start: "08:00", end: "09:30" },
+                { day: 3, start: "09:50", end: "11:20" },
+                { day: 5, start: "09:50", end: "11:20" }
             ], students: ["Maja (6a)", "Arina (6a)", "Tymofii (7.2)", "Emma (7.2)", "Ilyas (7.2)", "Ili (7.2)", "Sofia (7a)"] },
 
             { teacher: "Can", group: "A", times: [
-                { day: 1, start: "09:30", end: "11:20" },
-                { day: 3, start: "11:20", end: "13:10" },
-                { day: 4, start: "09:30", end: "11:20" }
+                { day: 1, start: "09:50", end: "11:20" },
+                { day: 3, start: "11:40", end: "13:10" },
+                { day: 4, start: "09:50", end: "11:20" }
             ], students: ["Alina (5.1)", "Daniil (6.1)", "Mohammed L. (6.1)", "Evelina (7.1)", "Beyar (7.2)", "Artur (7.2)", "Bahar (7a)"] },
 
             { teacher: "Tun", group: "B", times: [
-                { day: 2, start: "09:30", end: "11:20" },
-                { day: 4, start: "07:40", end: "09:30" },
-                { day: 5, start: "07:40", end: "09:30" }
+                { day: 2, start: "09:50", end: "11:20" },
+                { day: 4, start: "08:00", end: "09:30" },
+                { day: 5, start: "08:00", end: "09:30" }
             ], students: ["Anastasia (5a)", "Krisztian (6.1)", "Selena (6a)", "Arzoo (7.1)", "Marin (7.1)", "Mohammed H. (7.1)"] },
 
             { teacher: "Beu", group: "D", times: [
-                { day: 2, start: "11:20", end: "13:10" }
+                { day: 2, start: "11:40", end: "13:10" }
             ], students: ["Alle Sprachjongleure"] }
         ];
 
-        let nextSession = null;
-        let simulationMode = false;
-
         function checkSessionStatus() {
-            if (simulationMode) return;
-
-            document.body.style.animation = "pulseGreen 3s infinite";
-
             const now = new Date();
             let activeSession = null;
-            nextSession = null;
+            let warningSession = null;
+            let nextSession = null;
 
             schedule.forEach(group => {
                 group.times.forEach(time => {
@@ -130,47 +112,39 @@
                     let [endHours, endMinutes] = time.end.split(":").map(Number);
                     sessionEnd.setHours(endHours, endMinutes, 0);
 
+                    let warningTime = new Date(sessionStart);
+                    warningTime.setMinutes(warningTime.getMinutes() - 15);
+
                     if (now >= sessionStart && now <= sessionEnd) {
                         activeSession = { teacher: group.teacher, group: group.group, students: group.students };
+                    } else if (now >= warningTime && now < sessionStart) {
+                        warningSession = { teacher: group.teacher, group: group.group, time: sessionStart };
                     } else if (sessionStart > now && (!nextSession || sessionStart < nextSession.time)) {
-                        nextSession = { teacher: group.teacher, time: sessionStart, group: group.group, students: group.students };
+                        nextSession = { teacher: group.teacher, time: sessionStart, group: group.group };
                     }
                 });
             });
 
-            if (nextSession) {
-                let btn = document.getElementById("nextSessionBtn");
-                btn.style.display = "block";
-                btn.innerText = `Nächste Anschlussförderung: ${nextSession.time.toLocaleString('de-DE', { weekday: 'long', hour: '2-digit', minute: '2-digit' })} (Gruppe ${nextSession.group} - ${nextSession.teacher})`;
-                btn.onclick = toggleSimulation;
-            } else {
-                document.getElementById("nextSessionBtn").style.display = "none";
-            }
-        }
-
-        function toggleSimulation() {
-            simulationMode = !simulationMode;
-
-            if (simulationMode) {
+            if (activeSession) {
                 document.body.style.animation = "pulseRed 3s infinite";
                 document.getElementById("alertBox").style.display = "block";
                 document.getElementById("mainTitle").style.display = "none";
-
-                let studentsList = nextSession.students.join(", ");
-                document.getElementById("groupInfo").innerHTML = `<h2>Lehrkraft: ${nextSession.teacher}</h2><p><strong>Schüler:innen:</strong> ${studentsList}</p>`;
-
-                document.getElementById("nextSessionBtn").innerText = "Simulation stoppen";
+                document.getElementById("groupInfo").innerHTML = `<h2>Lehrkraft: ${activeSession.teacher}</h2><p><strong>Schüler:innen:</strong> ${activeSession.students.join(", ")}</p>`;
+            } else if (warningSession) {
+                document.body.style.animation = "pulseYellow 3s infinite";
+                document.getElementById("alertBox").style.display = "none";
+                document.getElementById("mainTitle").innerText = "Gleich Anschlussförderung!";
+                document.getElementById("groupInfo").innerHTML = `<h2>⚠️ Baldige Anschlussförderung: ${warningSession.time.toLocaleString('de-DE', { weekday: 'long', hour: '2-digit', minute: '2-digit' })} (Gruppe ${warningSession.group} - ${warningSession.teacher})</h2>`;
             } else {
                 document.body.style.animation = "pulseGreen 3s infinite";
                 document.getElementById("alertBox").style.display = "none";
-                document.getElementById("mainTitle").style.display = "block";
-                document.getElementById("groupInfo").innerHTML = "";
-                checkSessionStatus();
+                document.getElementById("mainTitle").innerText = "Keine Anschlussförderung ✅";
+                document.getElementById("groupInfo").innerHTML = nextSession ? `<h2>Nächste Anschlussförderung: ${nextSession.time.toLocaleString('de-DE', { weekday: 'long', hour: '2-digit', minute: '2-digit' })} (Gruppe ${nextSession.group} - ${nextSession.teacher})</h2>` : "<h2>Keine weiteren Anschlussförderungen.</h2>";
             }
         }
 
         checkSessionStatus();
-        setInterval(checkSessionStatus, 60000);
+        setInterval(checkSessionStatus, 30000);
     </script>
 </body>
 </html>
